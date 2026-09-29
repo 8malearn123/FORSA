@@ -1,0 +1,219 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import { Check, ChevronDown, X } from "lucide-react";
+
+import { Logo, Nuqta, Sparks } from "@/components/brand";
+import { HowItWorks } from "@/components/home/community";
+import { ButtonLink, Container, SectionHeading } from "@/components/ui";
+import { demoEnabled } from "@/lib/demo";
+
+export const metadata: Metadata = {
+  title: "عن فرصة",
+  description:
+    "«فرصة» مبادرة مجتمعية مجانية تجعل مواهب جازان وأسرها المنتجة وفرصها أوضح وأقرب. تعرّف على فكرتها ومبادئها ونصائح التواصل الآمن.",
+};
+
+const DO = [
+  "نعرض المواهب والأسر المنتجة والفرص في منطقة جازان",
+  "نسهّل البحث حسب المجال والمنتج والمحافظة",
+  "نوصلك بصاحب الإعلان مباشرة عبر واتساب أو الاتصال",
+];
+
+const DONT = [
+  "لا نستقبل أي مدفوعات ولا نأخذ عمولة",
+  "لا نتدخل في الاتفاق أو الأسعار أو العقود",
+  "لا ندير التوصيل ولا نضمن تنفيذ الطلبات",
+];
+
+const SAFETY = [
+  {
+    title: "اسأل قبل ما تتفق",
+    body: "اطلب نماذج من أعمال سابقة أو صوراً للمنتج، واسأل عن التفاصيل التي تهمك.",
+  },
+  {
+    title: "لا تحوّل المبلغ كاملاً مقدماً",
+    body: "مع شخص لا تعرفه، اتفقوا على دفعة معقولة أو الدفع عند الاستلام.",
+  },
+  {
+    title: "اكتبوا الاتفاق ولو برسالة",
+    body: "السعر والموعد والكمية في رسالة واتساب واضحة تحفظ حق الطرفين.",
+  },
+  {
+    title: "احمِ معلوماتك",
+    body: "لا تشارك رموز التحقق أو كلمات المرور أو صور الهوية مع أي أحد.",
+  },
+  {
+    title: "اللقاء في مكان عام",
+    body: "إذا احتجتم لقاءً قبل الاتفاق، فليكن في مكان عام ووقت مناسب.",
+  },
+  {
+    title: "بلّغ عن أي شيء مريب",
+    body: "زر «إبلاغ» موجود في كل إعلان، ونراجع البلاغات يدوياً.",
+  },
+];
+
+const FAQ = [
+  {
+    q: "هل «فرصة» مجانية؟",
+    a: "نعم، بالكامل. «فرصة» مبادرة مجتمعية هدفها خدمة أهل جازان، لا الربح منهم. لا اشتراكات، ولا رسوم نشر، ولا عمولات.",
+  },
+  {
+    q: "من يستطيع النشر على «فرصة»؟",
+    a: "أي شخص عنده مهارة، أو أسرة منتجة، أو فرد أو شركة أو جهة تبحث عن أحد، داخل منطقة جازان. نبدأ بجازان ونركّز عليها.",
+  },
+  {
+    q: "هل تتدخلون في الاتفاق أو الدفع؟",
+    a: "لا. «فرصة» مساحة للاكتشاف فقط. التواصل والاتفاق والدفع والتسليم كلها بينكم مباشرة، ولهذا نشجّع على اتباع نصائح التواصل الآمن.",
+  },
+  {
+    q: "كيف أعدّل إعلاني أو أحذفه؟",
+    a: "بعد النشر تظهر لك صفحة إدارة برابط خاص. احفظه أو أرسله لنفسك في واتساب؛ منه تستطيع إخفاء الإعلان، أو إغلاق الفرصة عند اكتمالها، أو حذفه نهائياً.",
+  },
+  {
+    q: "لماذا لا تطلبون صوراً شخصية؟",
+    a: "نحترم خصوصية مجتمعنا. يكفي اسمك أو كنيتك، وصور أعمالك ومنتجاتك تتكلم عنك. وبيانات تواصلك لا تظهر إلا لمن يطلبها.",
+  },
+  {
+    demo: true,
+    q: "هل الملفات المعروضة الآن حقيقية؟",
+    a: "هذه النسخة التجريبية الأولى تعرض أمثلة توضيحية من وحي جازان حتى تتضح الفكرة، والتواصل معها معطّل. كل ما يُنشر من خلال «انضم» يظهر كإعلان حقيقي.",
+  },
+];
+
+export default function AboutPage() {
+  return (
+    <>
+      <section className="relative overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-nuqta-grid [mask-image:linear-gradient(to_bottom,black,transparent)] opacity-60"
+        />
+        <Container className="relative grid items-center gap-12 py-16 md:py-24 lg:grid-cols-[1.2fr_1fr]">
+          <div>
+            <p className="inline-flex items-center gap-2 text-sm font-semibold text-clay-700">
+              <Nuqta className="size-2.5 text-clay-600" />
+              عن فرصة
+            </p>
+            <h1 className="mt-4 text-4xl leading-[1.3] font-black text-ink-900 md:text-6xl">
+              من جازان، ولجازان
+            </h1>
+            <p className="mt-6 text-lg leading-[2] text-ink-700">
+              في جازان مواهب كثيرة: مصممون ومعلمات وفنيون ومصورون، وأسر منتجة تصنع بيدها أكلات وحلويات
+              ومشغولات وبخوراً يفوح في البيوت. وفي جازان أيضاً ناس وشركات وجهات تبحث عنهم كل يوم… لكن الطرفين
+              ما يلتقون دائماً.
+            </p>
+            <p className="mt-4 text-lg leading-[2] text-ink-700">
+              «فرصة» مبادرة مجتمعية مجانية جاءت لتقرّب هذه المسافة: مساحة واحدة يرى فيها الجميع ما حولهم من
+              فرص، ويتواصلون مباشرة، بلا وسيط ولا عمولة.
+            </p>
+          </div>
+          <div className="relative mx-auto w-full max-w-md pb-16">
+            <figure className="relative aspect-[4/5] overflow-hidden rounded-[40px] rounded-ee-[11px] bg-sand-200">
+              <Image
+                src="/images/places/jazan.jpg"
+                alt="قلعة الدوسرية في جازان"
+                fill
+                sizes="(min-width: 1024px) 448px, 90vw"
+                className="object-cover"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-ink-950/40 via-transparent to-transparent" />
+            </figure>
+            <Sparks className="absolute -top-6 left-6 w-16" animated />
+            <div className="absolute start-[-1.5rem] bottom-0 rounded-[32px] rounded-ee-[9px] bg-white px-8 py-9 shadow-lift sm:start-[-3rem]">
+              <Logo className="w-40" />
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      <section className="bg-white py-20">
+        <Container>
+          <SectionHeading eyebrow="وضوح من البداية" title="ماذا نفعل؟ وماذا لا نفعل؟" />
+          <div className="mt-10 grid gap-5 md:grid-cols-2">
+            <div className="rounded-[32px] rounded-ee-[9px] bg-sage-100 p-8">
+              <h3 className="text-2xl font-extrabold text-sage-950">نفعل</h3>
+              <ul className="mt-5 flex flex-col gap-4">
+                {DO.map((item) => (
+                  <li key={item} className="flex gap-3 text-lg text-sage-950">
+                    <Check className="mt-1 size-5 shrink-0 text-sage-700" strokeWidth={2.5} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-[32px] rounded-ee-[9px] bg-sand-200 p-8">
+              <h3 className="text-2xl font-extrabold text-ink-900">لا نفعل</h3>
+              <ul className="mt-5 flex flex-col gap-4">
+                {DONT.map((item) => (
+                  <li key={item} className="flex gap-3 text-lg text-ink-800">
+                    <X className="mt-1 size-5 shrink-0 text-clay-600" strokeWidth={2.5} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      <HowItWorks />
+
+      <section id="safety" className="scroll-mt-24 bg-ink-900 py-20 text-sand-50">
+        <Container>
+          <p className="inline-flex items-center gap-2 text-sm font-semibold text-clay-300">
+            <Nuqta className="size-2.5 text-clay-400" />
+            نصائح التواصل الآمن
+          </p>
+          <h2 className="mt-3 max-w-2xl text-3xl leading-[1.3] font-black md:text-[2.6rem]">
+            الثقة تُبنى بخطوات بسيطة
+          </h2>
+          <ol className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {SAFETY.map((tip, i) => (
+              <li
+                key={tip.title}
+                className="rounded-[28px] rounded-ee-[8px] bg-ink-800 p-6 ring-1 ring-ink-700"
+              >
+                <span className="font-display text-3xl font-black text-clay-400">
+                  {new Intl.NumberFormat("ar-SA").format(i + 1)}
+                </span>
+                <h3 className="mt-3 text-xl font-bold text-sand-50">{tip.title}</h3>
+                <p className="mt-2 leading-[1.9] text-ink-200">{tip.body}</p>
+              </li>
+            ))}
+          </ol>
+        </Container>
+      </section>
+
+      <section id="faq" className="scroll-mt-24 py-20">
+        <Container>
+          <div className="max-w-3xl">
+            <SectionHeading eyebrow="الأسئلة الشائعة" title="أسئلة تجينا كثير" />
+            <div className="mt-10 flex flex-col gap-3">
+              {FAQ.filter((item) => demoEnabled() || !item.demo).map((item) => (
+                <details
+                  key={item.q}
+                  className="group rounded-[24px] rounded-ee-[7px] bg-white px-6 py-5 ring-1 ring-ink-100 open:ring-clay-200"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-lg font-bold text-ink-900">
+                    {item.q}
+                    <ChevronDown className="size-5 shrink-0 text-ink-400 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <p className="mt-3 leading-[1.9] text-ink-700">{item.a}</p>
+                </details>
+              ))}
+            </div>
+            <div className="mt-12 flex flex-wrap gap-3">
+              <ButtonLink href="/join" size="lg">
+                انضم إلى فرصة
+              </ButtonLink>
+              <ButtonLink href="/opportunities" size="lg" variant="secondary">
+                اكتشف الفرص
+              </ButtonLink>
+            </div>
+          </div>
+        </Container>
+      </section>
+    </>
+  );
+}
