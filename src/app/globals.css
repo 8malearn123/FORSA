@@ -1,26 +1,264 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * نظام تصميم «فرصة»
+ * كل القيم هنا مشتقة من الشعار: الطين (#A63F2B) والريحان (#72A98F)،
+ * مع درجات رملية دافئة للخلفيات وحبر بنّي داكن للنصوص.
+ */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  /* الطين — لون الشعار الأساسي */
+  --color-clay-50: #fcf3f0;
+  --color-clay-100: #f8e3dc;
+  --color-clay-200: #f0c5b8;
+  --color-clay-300: #e3a08d;
+  --color-clay-400: #d17a62;
+  --color-clay-500: #bc5840;
+  --color-clay-600: #a63f2b;
+  --color-clay-700: #8a3322;
+  --color-clay-800: #6e291d;
+  --color-clay-900: #521f17;
+  --color-clay-950: #33130d;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* الريحان — لون الشرارات في الشعار */
+  --color-sage-50: #f0f7f3;
+  --color-sage-100: #ddeee5;
+  --color-sage-200: #bfddcd;
+  --color-sage-300: #98c6af;
+  --color-sage-400: #72a98f;
+  --color-sage-500: #578f75;
+  --color-sage-600: #43765f;
+  --color-sage-700: #365f4d;
+  --color-sage-800: #2b4c3e;
+  --color-sage-900: #213a30;
+  --color-sage-950: #13231d;
+
+  /* الرمل — خلفيات دافئة */
+  --color-sand-50: #fefbf6;
+  --color-sand-100: #fbf5eb;
+  --color-sand-200: #f5ebda;
+  --color-sand-300: #ecdcc3;
+  --color-sand-400: #dec6a2;
+  --color-sand-500: #c9a97c;
+
+  /* الحبر — نصوص بنّية دافئة */
+  --color-ink-50: #f7f3ef;
+  --color-ink-100: #ede6df;
+  --color-ink-200: #dcd1c6;
+  --color-ink-300: #c2b3a5;
+  --color-ink-400: #9e8d7e;
+  --color-ink-500: #7d6c5e;
+  --color-ink-600: #635447;
+  --color-ink-700: #4b3e34;
+  --color-ink-800: #352a22;
+  --color-ink-900: #241b15;
+  --color-ink-950: #17110d;
+
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.85;
+
+  --shadow-soft: 0 1px 2px rgb(36 27 21 / 0.05), 0 6px 20px -8px rgb(36 27 21 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(36 27 21 / 0.04), 0 18px 40px -16px rgb(36 27 21 / 0.22);
+  --shadow-clay: 0 10px 30px -12px rgb(166 63 43 / 0.55);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 9s ease-in-out infinite;
+  --animate-spark: spark 2.4s ease-in-out infinite;
+  --animate-rise: rise 0.7s var(--ease-out-soft) both;
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes spark {
+    0%,
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.08) rotate(-4deg);
+      opacity: 0.85;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme inline {
+  --font-sans: var(--font-plex-arabic), system-ui, sans-serif;
+  --font-display: var(--font-alyamama), var(--font-plex-arabic), system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    background: var(--color-sand-100);
+    color: var(--color-ink-900);
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    /* الترويسة ثابتة في الأعلى، فنترك لها مساحة عند التمرير للروابط والحقول */
+    scroll-padding-top: 5.5rem;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "kern";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* نصوص المستخدمين قد تحوي كلمات أو روابط طويلة جداً، فنسمح بكسرها بدل أن تتجاوز الشاشة */
+  h1,
+  h2,
+  h3,
+  p,
+  li,
+  dd,
+  blockquote {
+    overflow-wrap: anywhere;
+  }
+
+  ::selection {
+    background: var(--color-clay-200);
+    color: var(--color-clay-950);
+  }
+
+  :focus-visible {
+    outline: 2.5px solid var(--color-clay-600);
+    outline-offset: 3px;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  /* أرقام الهواتف والروابط تُعرض من اليسار لليمين داخل النص العربي */
+  [dir="ltr"] {
+    unicode-bidi: isolate;
+  }
+}
+
+/* ظل الطين: خط رفيع تحت الكلمات المهمة، مستلهم من ذيل الراء في الشعار */
+@utility ink-underline {
+  background-image: linear-gradient(transparent 62%, var(--color-clay-100) 62%);
+  background-repeat: no-repeat;
+}
+
+/* شكل «النقطة المقلوبة»: ثلاث زوايا دائرية وزاوية حادة واحدة */
+@utility leaf-ss {
+  border-radius: 1.75rem;
+  border-start-start-radius: 0.375rem;
+}
+
+@utility leaf-ee {
+  border-radius: 1.75rem;
+  border-end-end-radius: 0.375rem;
+}
+
+@utility leaf-es {
+  border-radius: 1.75rem;
+  border-end-start-radius: 0.375rem;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* نسيج خفيف من النقاط المعيّنة — لمسة سعودية هادئة للخلفيات */
+@utility bg-nuqta-grid {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cpath d='M22 17.5l4.5 4.5-4.5 4.5-4.5-4.5z' fill='%23a63f2b' fill-opacity='0.07'/%3E%3C/svg%3E");
+}
+
+/*
+ * ظهور هادئ للعناصر عند التمرير (للمتصفحات التي تدعم الحركة المرتبطة بالتمرير).
+ * نحرّك الشفافية فقط حتى لا نتعارض مع حركة البطاقات عند المرور عليها.
+ */
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@utility reveal {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: reveal-fade linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+
+@utility reveal-rise {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+
+@media print {
+  .reveal,
+  .reveal-rise {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
