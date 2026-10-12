@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 
-import { FilterChip, FilterRow, PageHeader, ResultsBar, hrefWith, one, tally } from "@/components/browse";
+import {
+  FilterChip,
+  FilterPanel,
+  FilterRow,
+  PageHeader,
+  ResultsBar,
+  hrefWith,
+  one,
+  tally,
+} from "@/components/browse";
 import { TalentCard } from "@/components/cards";
 import { SearchBar } from "@/components/search-bar";
 import { ButtonLink, Container, EmptyState } from "@/components/ui";
@@ -80,7 +89,7 @@ export default async function TalentsPage({ searchParams }: PageProps<"/talents"
       </PageHeader>
 
       <Container className="py-10">
-        <div className="flex flex-col gap-3">
+        <FilterPanel>
           <FilterRow label="المجال">
             <FilterChip
               href={hrefWith("/talents", params, { category: undefined })}
@@ -115,7 +124,7 @@ export default async function TalentsPage({ searchParams }: PageProps<"/talents"
               </FilterChip>
             ))}
           </FilterRow>
-        </div>
+        </FilterPanel>
 
         <div className="mt-10">
           <ResultsBar count={countLabel(talents.length, COUNT.talent)} filters={active} />
