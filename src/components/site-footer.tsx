@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import { demoEnabled } from "@/lib/demo";
-
 import { Logo, Nuqta, OrnamentBand } from "./brand";
 import { Container } from "./ui";
 
@@ -67,8 +65,8 @@ export function SiteFooter() {
       </Container>
       <div className="border-t border-sand-300">
         <Container className="flex flex-col gap-2 py-6 text-sm text-ink-500 md:flex-row md:items-center md:justify-between">
-          <p>صُنعت بحب في جازان · ٢٠٢٦</p>
-          {demoEnabled() ? <p>نسخة تجريبية أولى — الملفات المعروضة حالياً أمثلة توضيحية.</p> : null}
+          <p>© ٢٠٢٦ فرصة — جميع الحقوق محفوظة لـ شركة قمة كود</p>
+          <p>صُنعت بحب في جازان</p>
         </Container>
       </div>
     </footer>

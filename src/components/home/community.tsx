@@ -6,6 +6,7 @@ import { formatNumber } from "@/lib/format";
 import { GOVERNORATES, type GovernorateSlug } from "@/lib/taxonomy";
 
 import { Nuqta, Sparks } from "../brand";
+import { ChatScene, PostScene, SearchScene } from "../illustrations";
 import { ButtonLink, Container, SectionHeading, Spark } from "../ui";
 
 const FEATURED_AREAS = [
@@ -88,14 +89,17 @@ const STEPS = [
   {
     title: "اعرض ما عندك",
     body: "أنشئ ملفك أو انشر فرصتك في دقائق، بدون حسابات ولا كلمات مرور.",
+    Scene: PostScene,
   },
   {
     title: "يكتشفك الناس",
     body: "يبحث أهل جازان وشركاتها حسب المهارة والمنتج والمحافظة، فيصلون إليك.",
+    Scene: SearchScene,
   },
   {
     title: "تواصلوا مباشرة",
     body: "بالواتساب أو الاتصال. الاتفاق بينكم، و«فرصة» لا تتدخل ولا تأخذ أي عمولة.",
+    Scene: ChatScene,
   },
 ];
 
@@ -111,36 +115,50 @@ export function HowItWorks() {
     <section className="py-16 md:py-24">
       <Container>
         <SectionHeading
-          align="center"
           eyebrow="كيف تعمل فرصة؟"
           title={
             <>
-              بسيطة… مثل <Spark>السالفة</Spark> بين الجيران
+              نعرّفكم على&nbsp;بعض… والباقي <Spark>بينكم</Spark>
             </>
           }
           description="ما نبيع ولا نشتري. نحن فقط نقرّب المسافة بين من يملك المهارة ومن يحتاجها."
         />
-        <ol className="mt-14 grid gap-5 md:grid-cols-3">
-          {STEPS.map((step, i) => (
+        <ol className="mt-12 grid gap-5 lg:grid-cols-3 lg:gap-6">
+          {STEPS.map(({ title, body, Scene }, i) => (
             <li
-              key={step.title}
-              className="relative rounded-[32px] rounded-ee-[9px] bg-white p-8 shadow-soft ring-1 ring-ink-100"
+              key={title}
+              className="relative grid gap-2 rounded-[32px] rounded-ee-[9px] bg-white p-3 shadow-soft ring-1 ring-ink-100 md:grid-cols-2 md:items-center lg:grid-cols-1 lg:items-start"
             >
-              <span className="relative inline-grid place-items-center">
-                <Nuqta className="size-16 text-clay-100" rotate={-90} />
-                <span className="absolute font-display text-3xl font-black text-clay-600">
-                  {formatNumber(i + 1)}
+              <Scene />
+              <div className="px-4 pt-3 pb-4 md:px-5">
+                <div className="flex items-center gap-3">
+                  <span className="relative grid shrink-0 place-items-center">
+                    <Nuqta className="size-10 text-clay-100" rotate={-90} />
+                    <span className="absolute font-display text-lg font-black text-clay-600">
+                      {formatNumber(i + 1)}
+                    </span>
+                  </span>
+                  <h3 className="text-2xl font-extrabold text-ink-900">{title}</h3>
+                </div>
+                <p className="mt-3 leading-[1.9] text-ink-600">{body}</p>
+              </div>
+              {i < STEPS.length - 1 ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute -end-[30px] top-[106px] z-10 hidden size-9 place-items-center rounded-full bg-white text-clay-600 shadow-soft ring-1 ring-ink-100 lg:grid"
+                >
+                  <ArrowLeft className="size-4" />
                 </span>
-              </span>
-              <h3 className="mt-5 text-2xl font-extrabold text-ink-900">{step.title}</h3>
-              <p className="mt-2 leading-[1.9] text-ink-600">{step.body}</p>
+              ) : null}
             </li>
           ))}
         </ol>
-        <ul className="mt-5 grid gap-5 rounded-[32px] rounded-ee-[9px] bg-sage-100 p-8 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-5 grid gap-6 rounded-[32px] rounded-ee-[9px] bg-sage-100 p-6 sm:grid-cols-2 md:p-8 lg:grid-cols-4">
           {PRINCIPLES.map((p) => (
             <li key={p.title} className="flex gap-4">
-              <p.icon className="mt-1 size-6 shrink-0 text-sage-700" strokeWidth={1.75} />
+              <span className="grid size-11 shrink-0 place-items-center rounded-[14px] rounded-ss-[5px] bg-white text-sage-700 shadow-soft">
+                <p.icon className="size-5" strokeWidth={1.75} />
+              </span>
               <div>
                 <h3 className="font-display text-lg font-bold text-sage-950">{p.title}</h3>
                 <p className="mt-0.5 text-sm leading-relaxed text-sage-900/75">{p.body}</p>

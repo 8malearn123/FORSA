@@ -15,6 +15,7 @@ import type { Family, Opportunity, Talent } from "@/lib/types";
 
 import { NuqtaAvatar } from "./brand";
 import { cn } from "./cn";
+import { CategoryIcon } from "./icons";
 import { CoverImage } from "./media";
 import { PendingHint } from "./pending-hint";
 import { Badge } from "./ui";
@@ -144,6 +145,15 @@ export function PosterIcon({ type, className }: { type: PosterType; className?: 
   return <Icon className={className} aria-hidden="true" />;
 }
 
+/** لون مربع المجال يتبع نوع الفرصة، فتتميز البطاقات بالنظر قبل القراءة */
+const TILE_TONE: Record<OpportunityType, string> = {
+  job: "bg-ink-900 text-sand-50",
+  task: "bg-sage-100 text-sage-700",
+  order: "bg-clay-100 text-clay-700",
+  training: "bg-sand-300 text-clay-800",
+  volunteer: "bg-sage-50 text-sage-700 ring-1 ring-sage-200 ring-inset",
+};
+
 export function OpportunityCard({
   opportunity: o,
   className,
@@ -151,29 +161,45 @@ export function OpportunityCard({
   opportunity: Opportunity;
   className?: string;
 }) {
+  const muted = o.closed || isStale(o);
+  const category = getCategory(o.category);
   return (
     <Link
       href={`/opportunities/${o.id}`}
       className={cn(
         CARD,
         "rounded-[26px] rounded-ee-[8px] p-5",
-        (o.closed || isStale(o)) && "bg-sand-50 shadow-none",
+        muted && "bg-sand-50 shadow-none",
         className,
       )}
     >
-      <div className="flex items-center gap-2">
-        <Badge tone={TYPE_TONE[o.type]}>{opportunityTypeShort(o.type)}</Badge>
-        {o.closed ? <Badge tone="sand">اكتملت</Badge> : null}
-        {isStale(o) ? <Badge tone="sand">قد تكون انتهت</Badge> : null}
-        <span className="ms-auto text-xs text-ink-500">{timeAgo(freshSince(o))}</span>
+      <div className="flex items-start gap-4">
+        <span
+          title={category?.name}
+          className={cn(
+            "grid size-14 shrink-0 place-items-center rounded-[18px] rounded-ss-[6px]",
+            TILE_TONE[o.type],
+            muted && "opacity-60",
+          )}
+        >
+          {category ? <CategoryIcon icon={category.icon} className="size-7" strokeWidth={1.6} /> : null}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <Badge tone={TYPE_TONE[o.type]}>{opportunityTypeShort(o.type)}</Badge>
+            {o.closed ? <Badge tone="sand">اكتملت</Badge> : null}
+            {isStale(o) ? <Badge tone="sand">قد تكون انتهت</Badge> : null}
+            <span className="ms-auto text-xs text-ink-500">{timeAgo(freshSince(o))}</span>
+          </div>
+          <h3 className="mt-2.5 font-display text-lg leading-snug font-bold text-ink-900 group-hover:text-clay-700">
+            {o.title}
+          </h3>
+          <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink-600">
+            <PosterIcon type={o.poster.type} className="size-4 text-ink-400" />
+            {o.poster.name}
+          </p>
+        </div>
       </div>
-      <h3 className="mt-3.5 font-display text-lg leading-snug font-bold text-ink-900 group-hover:text-clay-700">
-        {o.title}
-      </h3>
-      <p className="mt-2 flex items-center gap-1.5 text-sm text-ink-600">
-        <PosterIcon type={o.poster.type} className="size-4 text-ink-400" />
-        {o.poster.name}
-      </p>
       <div className="mt-auto flex flex-wrap gap-x-4 gap-y-1.5 pt-4 text-sm text-ink-500">
         <span className="inline-flex items-center gap-1">
           <MapPin className="size-4 text-clay-500" />

@@ -86,13 +86,24 @@ export function PageHeader({
   );
 }
 
+/** لوحة الفلاتر: صفوف مفصولة بخط رفيع، وعناوينها في عمود واحد حتى تبدأ الخيارات من نفس المكان */
+export function FilterPanel({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex flex-col divide-y divide-ink-100 rounded-[24px] rounded-ee-[7px] bg-white px-5 shadow-soft ring-1 ring-ink-100 sm:px-6">
+      {children}
+    </div>
+  );
+}
+
 export function FilterRow({ label, children }: { label?: string; children: ReactNode }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-2.5 py-4 sm:flex-row sm:items-start sm:gap-4">
       {label ? (
-        <span className="hidden shrink-0 text-sm font-medium text-ink-500 sm:block">{label}</span>
+        <span className="shrink-0 text-xs font-semibold text-ink-500 sm:w-16 sm:pt-2 sm:text-sm">
+          {label}
+        </span>
       ) : null}
-      <div className="-mx-5 no-scrollbar flex gap-2 overflow-x-auto px-5 py-1 sm:mx-0 sm:flex-wrap sm:px-0">
+      <div className="-mx-5 no-scrollbar flex min-w-0 flex-1 gap-2 overflow-x-auto px-5 sm:mx-0 sm:flex-wrap sm:px-0">
         {children}
       </div>
     </div>
@@ -118,10 +129,8 @@ export function FilterChip({
       scroll={false}
       aria-current={active ? "true" : undefined}
       className={cn(
-        "relative inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium ring-1 transition-colors ring-inset",
-        active
-          ? "bg-ink-900 text-sand-50 ring-ink-900"
-          : "bg-white text-ink-700 ring-ink-100 hover:bg-sand-50 hover:ring-ink-200",
+        "relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition-colors",
+        active ? "bg-ink-900 text-sand-50" : "bg-sand-100 text-ink-700 hover:bg-sand-200 hover:text-ink-900",
       )}
     >
       {icon ? (

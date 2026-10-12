@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 
-import { FilterChip, FilterRow, PageHeader, ResultsBar, hrefWith, one, tally } from "@/components/browse";
+import {
+  FilterChip,
+  FilterPanel,
+  FilterRow,
+  PageHeader,
+  ResultsBar,
+  hrefWith,
+  one,
+  tally,
+} from "@/components/browse";
 import { OpportunityCard } from "@/components/cards";
 import { SearchBar } from "@/components/search-bar";
 import { ButtonLink, Container, EmptyState } from "@/components/ui";
@@ -83,7 +92,7 @@ export default async function OpportunitiesPage({ searchParams }: PageProps<"/op
       </PageHeader>
 
       <Container className="py-10">
-        <div className="flex flex-col gap-3">
+        <FilterPanel>
           <FilterRow label="النوع">
             <FilterChip href={hrefWith("/opportunities", params, { type: undefined })} active={!params.type}>
               الكل
@@ -118,7 +127,7 @@ export default async function OpportunitiesPage({ searchParams }: PageProps<"/op
               </FilterChip>
             ))}
           </FilterRow>
-        </div>
+        </FilterPanel>
 
         <div className="mt-10">
           <ResultsBar count={countLabel(open, COUNT.openOpportunity)} filters={active} />
