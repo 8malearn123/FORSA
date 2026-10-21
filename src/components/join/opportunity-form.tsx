@@ -35,14 +35,20 @@ export function OpportunityForm({
   defaultType,
   initial,
   action,
+  whatsapp,
 }: {
   defaultType?: OpportunityType;
   /** عند التعديل: البيانات الحالية ودالة الحفظ */
   initial?: Opportunity;
   action?: (state: FormState, formData: FormData) => Promise<FormState>;
+  /** عند النشر: رقم الحساب مقترحاً للواتساب */
+  whatsapp?: string;
 }) {
   const editing = Boolean(initial);
   const [type, setType] = useState<OpportunityType | undefined>(initial?.type ?? defaultType);
+  const [poster, setPoster] = useState<string>(initial?.poster.type ?? "individual");
+  // الشركات والجهات تفرز المتقدمين افتراضياً، والأفراد يستقبلون التواصل مباشرة. ويستطيع كلٌّ تغييره
+  const [receive, setReceive] = useState(initial ? (initial.apply ? "apply" : "contact") : "contact");
   return (
     <ActionForm
       action={action ?? createOpportunity}
@@ -55,6 +61,11 @@ export function OpportunityForm({
           label="الناشر"
           name="posterType"
           defaultValue={initial?.poster.type ?? "individual"}
+          onValueChange={(value) => {
+            if (editing) return;
+            setPoster(value);
+            setReceive(value === "individual" ? "contact" : "apply");
+          }}
           options={POSTER_TYPES.map((p) => ({ value: p.slug, label: p.name }))}
         />
         <TextInput
@@ -151,13 +162,40 @@ export function OpportunityForm({
         </div>
       </FormSection>
 
-      <FormSection
-        step={4}
-        title="كيف يتواصلون معك؟"
-        description="لا تظهر بياناتك في الصفحة مباشرة، بل لمن يطلبها فقط."
-      >
-        <ContactFields initial={initial?.contact} />
+      <FormSection step={4} title="كيف تستقبل المهتمين؟">
+        <Choices
+          // عند تغيير نوع الناشر يتغير الاختيار الافتراضي، فنعيد رسم الخيارات به
+          key={editing ? "receive" : poster}
+          label="طريقة الاستقبال"
+          name="receive"
+          columns
+          defaultValue={receive}
+          onValueChange={setReceive}
+          options={[
+            {
+              value: "apply",
+              label: "يقدّمون بملفاتهم، وأفرزهم أنا",
+              hint: "تختار الأنسب وتتواصل معه بالواتساب، ورقمك لا يظهر لأحد.",
+            },
+            {
+              value: "contact",
+              label: "يتواصلون معي مباشرة",
+              hint: "يظهر واتسابك أو رقمك لمن يطلبه.",
+            },
+          ]}
+        />
       </FormSection>
+
+      {receive === "contact" ? (
+        <FormSection
+          step={5}
+          title="كيف يتواصلون معك؟"
+          description="لا تظهر بياناتك في الصفحة مباشرة، بل لمن يطلبها فقط."
+        >
+          {/* فرصة كانت تستقبل التقديم لا تحمل بيانات تواصل ولا موافقة سابقة على عرضها */}
+          <ContactFields initial={initial?.apply ? undefined : initial?.contact} whatsapp={whatsapp} />
+        </FormSection>
+      ) : null}
     </ActionForm>
   );
 }

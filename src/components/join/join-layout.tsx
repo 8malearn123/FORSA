@@ -52,8 +52,8 @@ export function JoinLayout({
           <div className="flex gap-3 rounded-[24px] rounded-ee-[7px] bg-white p-5 text-sm leading-relaxed text-ink-600 ring-1 ring-ink-100">
             <KeyRound className="size-5 shrink-0 text-clay-600" />
             <p>
-              بدون حساب ولا كلمة مرور. بعد النشر نعطيك <strong className="text-ink-900">رابطاً خاصاً</strong>{" "}
-              تدير منه إعلانك: تخفيه، أو تغلقه، أو تحذفه.
+              إعلانك يُحفظ في <strong className="text-ink-900">حسابك</strong>، وتدخله برقم واتسابك بدون كلمة
+              مرور. منه تعدّل إعلانك أو تخفيه أو تحذفه، ولا يستطيع ذلك أحد غيرك.
             </p>
           </div>
           <div className="flex gap-3 rounded-[24px] rounded-ee-[7px] bg-white p-5 text-sm leading-relaxed text-ink-600 ring-1 ring-ink-100">

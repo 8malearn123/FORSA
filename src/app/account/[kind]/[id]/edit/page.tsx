@@ -8,30 +8,32 @@ import { FamilyForm } from "@/components/join/family-form";
 import { OpportunityForm } from "@/components/join/opportunity-form";
 import { TalentForm } from "@/components/join/talent-form";
 import { Container } from "@/components/ui";
-import { findOwned } from "@/lib/store";
+import { requireAccount } from "@/lib/auth";
+import { isKind, titleOf } from "@/lib/listing";
+import { ownedListing, readStore } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: "تعديل الإعلان",
   robots: { index: false, follow: false },
-  referrer: "no-referrer",
 };
 
-export default async function EditListingPage({ params }: PageProps<"/manage/[token]/edit">) {
-  const { token } = await params;
-  const listing = await findOwned(token);
+export default async function EditListingPage({ params }: PageProps<"/account/[kind]/[id]/edit">) {
+  const { kind, id } = await params;
+  const account = await requireAccount(`/account/${kind}/${id}/edit`);
+  const listing = isKind(kind) ? ownedListing(await readStore(), account.id, kind, id) : null;
   if (!listing) notFound();
 
   return (
     <>
       <section className="border-b border-ink-100/70 bg-sand-200/50">
         <Container className="pt-8 pb-10">
-          <BackLink href={`/manage/${token}`}>لوحة إدارة الإعلان</BackLink>
+          <BackLink href={`/account/${listing.kind}/${listing.id}`}>لوحة إدارة الإعلان</BackLink>
           <p className="mt-8 flex w-fit items-center gap-2 text-sm font-semibold text-clay-700">
             <Nuqta className="size-2.5 text-clay-600" />
             تعديل الإعلان
           </p>
           <h1 className="mt-3 text-4xl leading-[1.25] font-black text-ink-900 md:text-5xl">
-            {listing.kind === "opportunity" ? listing.title : listing.name}
+            {titleOf(listing)}
           </h1>
           <p className="mt-3 text-lg text-ink-600">عدّل ما تحتاج ثم احفظ، وتظهر التغييرات فوراً.</p>
         </Container>
@@ -39,13 +41,13 @@ export default async function EditListingPage({ params }: PageProps<"/manage/[to
       <Container className="py-10">
         <div className="max-w-4xl">
           {listing.kind === "talent" ? (
-            <TalentForm initial={listing} action={updateTalent.bind(null, token)} />
+            <TalentForm initial={listing} action={updateTalent.bind(null, listing.id)} />
           ) : null}
           {listing.kind === "family" ? (
-            <FamilyForm initial={listing} action={updateFamily.bind(null, token)} />
+            <FamilyForm initial={listing} action={updateFamily.bind(null, listing.id)} />
           ) : null}
           {listing.kind === "opportunity" ? (
-            <OpportunityForm initial={listing} action={updateOpportunity.bind(null, token)} />
+            <OpportunityForm initial={listing} action={updateOpportunity.bind(null, listing.id)} />
           ) : null}
         </div>
       </Container>

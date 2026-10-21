@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CalendarDays, CircleCheck, Clock3, Hourglass, MapPin, Package, Wallet, Wifi } from "lucide-react";
 
+import { ApplyPanel } from "@/components/apply-panel";
 import { Nuqta, Sparks } from "@/components/brand";
 import { OpportunityCard, PosterIcon, TYPE_TONE } from "@/components/cards";
 import { ContactPanel } from "@/components/contact-panel";
@@ -26,9 +27,10 @@ export async function generateMetadata({ params }: PageProps<"/opportunities/[id
   };
 }
 
-export default async function OpportunityPage({ params }: PageProps<"/opportunities/[id]">) {
+export default async function OpportunityPage({ params, searchParams }: PageProps<"/opportunities/[id]">) {
   const o = await getOpportunity((await params).id);
   if (!o) notFound();
+  const sp = await searchParams;
 
   const category = getCategory(o.category);
   const similar = similarTo(
@@ -77,7 +79,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
             },
           },
           jobLocationType: o.remote ? "TELECOMMUTE" : undefined,
-          directApply: false,
+          directApply: Boolean(o.apply),
         }
       : null;
 
@@ -199,13 +201,17 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
         }
         aside={
           <>
-            <ContactPanel
-              kind="opportunity"
-              id={o.id}
-              name={isOrder ? "قدّم عرضك مباشرة" : "مهتم بهذه الفرصة؟"}
-              available={channels}
-              cta={isOrder ? "تواصل مع صاحب الطلب" : "تواصل مع صاحب الفرصة"}
-            />
+            {o.apply ? (
+              <ApplyPanel opportunity={o} ready={sp.ready === "1"} applied={sp.applied === "1"} />
+            ) : (
+              <ContactPanel
+                kind="opportunity"
+                id={o.id}
+                name={isOrder ? "قدّم عرضك مباشرة" : "مهتم بهذه الفرصة؟"}
+                available={channels}
+                cta={isOrder ? "تواصل مع صاحب الطلب" : "تواصل مع صاحب الفرصة"}
+              />
+            )}
             <div className="flex flex-col gap-4 rounded-[24px] rounded-ee-[7px] bg-sand-200/70 p-5">
               <p className="text-sm text-ink-700">تعرف أحد تناسبه هذه الفرصة؟ الفرص تكبر بالمشاركة.</p>
               <ShareActions title={o.title} prompt="فرصة في جازان ممكن تناسبك" />

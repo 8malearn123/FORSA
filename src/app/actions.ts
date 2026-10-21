@@ -2,15 +2,13 @@
 
 import { getFamily, getOpportunity, getTalent } from "@/lib/data";
 import { contactChannels, type ContactChannel } from "@/lib/contact";
-import { titleOf } from "@/lib/listing";
+import { isKind, titleOf } from "@/lib/listing";
 import { DAY, HOUR, release, take, visitorKey } from "@/lib/rate-limit";
-import { addReport, countReveal, findOwnedMany, listingKey } from "@/lib/store";
+import { addReport, countReveal, listingKey } from "@/lib/store";
 import type { Listing, ListingKind } from "@/lib/types";
 
-const KINDS: ListingKind[] = ["talent", "family", "opportunity"];
-
 async function findListing(kind: unknown, id: unknown): Promise<Listing | null> {
-  if (!KINDS.includes(kind as ListingKind) || typeof id !== "string" || id.length > 80) return null;
+  if (!isKind(kind) || typeof id !== "string" || id.length > 80) return null;
   if (kind === "talent") return getTalent(id);
   if (kind === "family") return getFamily(id);
   return getOpportunity(id);
@@ -74,31 +72,4 @@ export async function reportListing(_prev: ReportState, formData: FormData): Pro
     note: note || undefined,
   });
   return { status: "done" };
-}
-
-export type MyListing = {
-  token: string;
-  kind: ListingKind;
-  title: string;
-  hidden: boolean;
-  closed: boolean;
-};
-
-/**
- * «إعلاناتي على هذا الجهاز»: يتحقق من روابط الإدارة المحفوظة في المتصفح
- * ويرجع أقل قدر من المعلومات لعرضها لصاحبها فقط.
- */
-export async function lookupMyListings(tokens: unknown): Promise<MyListing[]> {
-  if (!Array.isArray(tokens)) return [];
-  if (!take(`mine:${await visitorKey()}`, 30, HOUR)) return [];
-  const valid = tokens
-    .filter((t): t is string => typeof t === "string" && /^[\w-]{16,64}$/.test(t))
-    .slice(0, 20);
-  return (await findOwnedMany(valid)).map(({ token, listing }) => ({
-    token,
-    kind: listing.kind,
-    title: titleOf(listing),
-    hidden: Boolean(listing.hidden || listing.moderated),
-    closed: listing.kind === "opportunity" && Boolean(listing.closed),
-  }));
 }

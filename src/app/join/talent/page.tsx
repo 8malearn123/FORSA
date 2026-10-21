@@ -1,19 +1,31 @@
 import type { Metadata } from "next";
 
+import { one } from "@/components/browse";
 import { JoinLayout } from "@/components/join/join-layout";
 import { TalentForm } from "@/components/join/talent-form";
+import { requireAccount } from "@/lib/auth";
+import { isListingId } from "@/lib/listing";
+import { localSaudiMobile } from "@/lib/text";
 
 export const metadata: Metadata = {
   title: "اعرض مهارتك",
   description: "أنشئ ملفك على «فرصة» مجاناً، وخلّ أهل جازان وشركاتها يكتشفون مهارتك.",
 };
 
-export default function JoinTalentPage() {
+export default async function JoinTalentPage({ searchParams }: PageProps<"/join/talent">) {
+  // جاء ليقدّم على فرصة: بعد النشر نرجعه إليها
+  const apply = one((await searchParams).apply);
+  const applyTo = isListingId(apply) ? apply : undefined;
+  const account = await requireAccount(applyTo ? `/join/talent?apply=${applyTo}` : "/join/talent");
   return (
     <JoinLayout
       eyebrow="أصحاب المهارات"
       title="اعرض مهارتك، وخلّ الفرصة تلقاك"
-      description="سواء تبحث عن وظيفة، أو مشاريع حرة، أو دخل إضافي: ملف واضح على «فرصة» يوصلك لناس وشركات في جازان يبحثون عن مهارتك."
+      description={
+        applyTo
+          ? "أنشئ ملفك مرة واحدة، وبعد النشر نرجعك للفرصة لتقدّم عليها به مباشرة. وتقدّم به على أي فرصة بعدها."
+          : "سواء تبحث عن وظيفة، أو مشاريع حرة، أو دخل إضافي: ملف واضح على «فرصة» يوصلك لناس وشركات في جازان يبحثون عن مهارتك."
+      }
       tips={{
         title: "لملف يلفت الانتباه",
         items: [
@@ -24,7 +36,7 @@ export default function JoinTalentPage() {
         ],
       }}
     >
-      <TalentForm />
+      <TalentForm whatsapp={localSaudiMobile(account.phone)} applyTo={applyTo} />
     </JoinLayout>
   );
 }

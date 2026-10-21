@@ -3,10 +3,11 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { currentAccount } from "@/lib/auth";
 import { COUNT, countLabel, formatNumber } from "@/lib/format";
 import { imagesOf } from "@/lib/listing";
 import { HOUR, release, take, visitorKey } from "@/lib/rate-limit";
-import { collectionOf, hashToken, insertListing, mutateStore, newId, readStore } from "@/lib/store";
+import { collectionOf, insertListing, mutateStore, newId, ownedListing, readStore } from "@/lib/store";
 import {
   CATEGORIES,
   EXPERIENCE,
@@ -17,7 +18,7 @@ import {
   SEEKING,
   SKILL_CATEGORIES,
 } from "@/lib/taxonomy";
-import { normalizeSaudiMobile } from "@/lib/text";
+import { localSaudiMobile, normalizeSaudiMobile } from "@/lib/text";
 import type { Contact, Family, Listing, ListingKind, Opportunity, Product, Talent } from "@/lib/types";
 import { UploadError, discardImages, saveImage } from "@/lib/uploads";
 
@@ -62,7 +63,7 @@ const mobile = z
       ctx.addIssue({ code: "custom", message: "اكتب رقم جوال سعودي صحيح مثل 05xxxxxxxx" });
       return z.NEVER;
     }
-    return "0" + n.slice(3);
+    return localSaudiMobile(n);
   })
   .optional();
 
@@ -154,6 +155,11 @@ function fail(errors: Record<string, string>, message = "راجع الحقول �
 }
 
 const UNEXPECTED = "تعذّر حفظ الإعلان الآن. بياناتك ما زالت هنا، حاول مرة أخرى بعد قليل.";
+
+/** انتهت الجلسة أثناء تعبئة النموذج: ما كتبه باقٍ في الصفحة، ويدخل من نافذة أخرى */
+const SIGNED_OUT = "انتهت جلستك. ادخل إلى حسابك من نافذة أخرى، ثم ارجع وأعد الإرسال؛ ما كتبته باقٍ هنا.";
+
+const MISSING = "هذا الإعلان لم يعد في حسابك، ربما حُذف.";
 
 /** حقل مخفي يملؤه الروبوت فقط */
 const isBot = (fd: FormData) => String(fd.get("website_url") ?? "") !== "";
@@ -248,7 +254,10 @@ const talentSchema = z.object({
     .max(6, { error: `حتى ${formatNumber(6)} خدمات` }),
 });
 
-type TalentFields = Omit<Talent, "kind" | "id" | "createdAt" | "available" | "seed" | "hidden" | "moderated">;
+type TalentFields = Omit<
+  Talent,
+  "kind" | "id" | "createdAt" | "ownerId" | "available" | "seed" | "hidden" | "moderated"
+>;
 
 async function readTalent(fd: FormData, existing?: Talent): Promise<Parsed<TalentFields>> {
   const parsed = talentSchema.safeParse({
@@ -325,7 +334,7 @@ const familySchema = z.object({
     .max(8, { error: `حتى ${formatNumber(8)} منتجات` }),
 });
 
-type FamilyFields = Omit<Family, "kind" | "id" | "createdAt" | "seed" | "hidden" | "moderated">;
+type FamilyFields = Omit<Family, "kind" | "id" | "createdAt" | "ownerId" | "seed" | "hidden" | "moderated">;
 
 async function readFamily(fd: FormData, existing?: Family): Promise<Parsed<FamilyFields>> {
   const names = fd.getAll("product_name").map((n) => clean(n).trim());
@@ -412,11 +421,12 @@ const opportunitySchema = z.object({
   when: optionalText(60, "الموعد"),
   quantity: optionalText(40, "العدد"),
   budget: optionalText(60, "المبلغ"),
+  receive: z.enum(["apply", "contact"], { error: "اختر طريقة استقبال المهتمين" }),
 });
 
 type OpportunityFields = Omit<
   Opportunity,
-  "kind" | "id" | "createdAt" | "seed" | "hidden" | "moderated" | "closed" | "renewedAt"
+  "kind" | "id" | "createdAt" | "ownerId" | "seed" | "hidden" | "moderated" | "closed" | "renewedAt"
 >;
 
 /** نحذف علامات القوائم فقط («-»، «•»، «١.»، «2)») ونُبقي الأرقام التي هي جزء من النص («3 سنوات خبرة») */
@@ -440,12 +450,15 @@ async function readOpportunity(fd: FormData): Promise<Parsed<OpportunityFields>>
     when: get(fd, "when"),
     quantity: get(fd, "quantity"),
     budget: get(fd, "budget"),
+    receive: get(fd, "receive") || undefined,
   });
-  const contact = contactFrom(fd);
-  const bad = invalid(parsed, contact);
-  if (bad || !parsed.success || !contact.success) return { ok: false, state: bad ?? fail({}) };
+  // من يستقبل التقديم يتواصل هو مع من يختار، فلا نطلب منه بيانات تواصل ولا نحفظها
+  const apply = get(fd, "receive") === "apply";
+  const contact = apply ? null : contactFrom(fd);
+  const bad = invalid(parsed, ...(contact ? [contact] : []));
+  if (bad || !parsed.success || (contact && !contact.success)) return { ok: false, state: bad ?? fail({}) };
 
-  const { posterType, posterName, remote, ...data } = parsed.data;
+  const { posterType, posterName, remote, receive, ...data } = parsed.data;
   return {
     ok: true,
     saved: [],
@@ -453,17 +466,18 @@ async function readOpportunity(fd: FormData): Promise<Parsed<OpportunityFields>>
       ...data,
       poster: { type: posterType, name: posterName },
       remote: remote || undefined,
-      contact: cleanContact(contact.data),
+      apply: receive === "apply" || undefined,
+      contact: contact?.success ? cleanContact(contact.data) : {},
     },
   };
 }
 
 /* ─────────────── النشر ─────────────── */
 
-type Stamp = { id: string; createdAt: string };
+type Stamp = { id: string; createdAt: string; ownerId: string };
 
 /**
- * خطوات النشر المشتركة: التحقق، ثم حد النشر، ثم الحفظ والانتقال لصفحة الإدارة.
+ * خطوات النشر المشتركة: الحساب، ثم التحقق، ثم حد النشر، ثم الحفظ والانتقال لصفحة الإدارة.
  * أي خطأ غير متوقع يرجع رسالة ودّية ويُبقي ما كتبه الزائر في النموذج.
  */
 async function publish<T>(
@@ -474,8 +488,10 @@ async function publish<T>(
   if (isBot(fd)) return fail({}, "تعذّر إرسال النموذج.");
   let reserved: string | undefined;
   let saved: string[] = [];
-  let token: string;
+  let path: string;
   try {
+    const account = await currentAccount();
+    if (!account) return fail({}, SIGNED_OUT);
     const result = await read(fd);
     if (!result.ok) return result.state;
     saved = result.saved;
@@ -485,14 +501,25 @@ async function publish<T>(
       return limited();
     }
     reserved = key;
-    token = await insertListing(toListing(result.data, { id: newId(), createdAt: new Date().toISOString() }));
+    const listing = toListing(result.data, {
+      id: newId(),
+      createdAt: new Date().toISOString(),
+      ownerId: account.id,
+    });
+    path = `/account/${listing.kind}/${await insertListing(listing)}?new=1`;
+    // من أنشأ ملفه ليقدّم على فرصة يرجع إليها مباشرة ليكمل التقديم
+    const target = get(fd, "apply");
+    if (target && listing.kind !== "opportunity") {
+      const o = (await readStore()).opportunities.find((x) => x.id === target);
+      if (o?.apply && !o.closed && !o.hidden && !o.moderated) path = `/opportunities/${o.id}?ready=1#apply`;
+    }
   } catch (error) {
     console.error("[forsa] publish failed", error);
     if (reserved) release(reserved);
     await discardImages(saved).catch(() => undefined);
     return fail({}, UNEXPECTED);
   }
-  redirect(`/manage/${token}?new=1`);
+  redirect(path);
 }
 
 export async function createTalent(_prev: FormState, fd: FormData): Promise<FormState> {
@@ -507,14 +534,7 @@ export async function createOpportunity(_prev: FormState, fd: FormData): Promise
   return publish(fd, readOpportunity, (data, stamp) => ({ ...stamp, ...data, kind: "opportunity" }));
 }
 
-/* ─────────────── التعديل من رابط الإدارة ─────────────── */
-
-async function ownedListing(token: string, kind: ListingKind) {
-  const store = await readStore();
-  const owner = store.owners[hashToken(token)];
-  if (!owner || owner.kind !== kind) return null;
-  return collectionOf(store, kind).find((l) => l.id === owner.id) ?? null;
-}
+/* ─────────────── التعديل من الحساب ─────────────── */
 
 /**
  * نُبقي فقط الصور التي ما زالت تابعة للإعلان الآن (أو التي رُفعت في هذا الحفظ)،
@@ -535,20 +555,22 @@ function keepKnownImages(listing: Listing, allowed: Set<string>): Listing {
   return listing;
 }
 
-/** يحفظ التعديل مع الإبقاء على المعرّف وتاريخ النشر والحالة، ويحذف الصور التي لم تعد مستخدمة */
+/**
+ * يحفظ التعديل مع الإبقاء على المعرّف وتاريخ النشر والحالة وصاحب الإعلان،
+ * ويحذف الصور التي لم تعد مستخدمة. الملكية تُفحص مرة أخرى لحظة الحفظ.
+ */
 async function saveEdit(
-  token: string,
+  accountId: string,
   kind: ListingKind,
+  id: string,
   fields: object,
   saved: string[],
 ): Promise<FormState> {
   let replaced: { before: Listing; after: Listing } | null;
   try {
     replaced = await mutateStore((store) => {
-      const owner = store.owners[hashToken(token)];
-      if (!owner || owner.kind !== kind) return null;
       const list = collectionOf(store, kind);
-      const index = list.findIndex((l) => l.id === owner.id);
+      const index = list.findIndex((l) => l.id === id && l.ownerId === accountId);
       if (index < 0) return null;
       const before = list[index];
       const allowed = new Set([...imagesOf(before), ...saved].filter((s): s is string => Boolean(s)));
@@ -562,42 +584,46 @@ async function saveEdit(
   }
   if (!replaced) {
     await discardImages(saved);
-    return fail({}, "رابط الإدارة لم يعد صالحاً، ربما حُذف الإعلان.");
+    return fail({}, MISSING);
   }
   const kept = new Set(imagesOf(replaced.after));
   await discardImages([...imagesOf(replaced.before), ...saved].filter((src) => src && !kept.has(src))).catch(
     () => undefined,
   );
-  redirect(`/manage/${token}?saved=1`);
+  redirect(`/account/${kind}/${id}?saved=1`);
 }
 
 async function edit<T extends Listing>(
-  token: string,
+  id: string,
   kind: ListingKind,
   fd: FormData,
   read: (fd: FormData, existing: T) => Promise<Parsed<object>>,
 ): Promise<FormState> {
   let result: Parsed<object>;
+  let accountId: string;
   try {
-    const existing = await ownedListing(token, kind);
-    if (!existing) return fail({}, "رابط الإدارة غير صالح.");
+    const account = await currentAccount();
+    if (!account) return fail({}, SIGNED_OUT);
+    accountId = account.id;
+    const existing = ownedListing(await readStore(), account.id, kind, id);
+    if (!existing) return fail({}, MISSING);
     result = await read(fd, existing as T);
   } catch (error) {
     console.error("[forsa] edit failed", error);
     return fail({}, UNEXPECTED);
   }
   if (!result.ok) return result.state;
-  return saveEdit(token, kind, result.data, result.saved);
+  return saveEdit(accountId, kind, id, result.data, result.saved);
 }
 
-export async function updateTalent(token: string, _prev: FormState, fd: FormData): Promise<FormState> {
-  return edit<Talent>(token, "talent", fd, readTalent);
+export async function updateTalent(id: string, _prev: FormState, fd: FormData): Promise<FormState> {
+  return edit<Talent>(id, "talent", fd, readTalent);
 }
 
-export async function updateFamily(token: string, _prev: FormState, fd: FormData): Promise<FormState> {
-  return edit<Family>(token, "family", fd, readFamily);
+export async function updateFamily(id: string, _prev: FormState, fd: FormData): Promise<FormState> {
+  return edit<Family>(id, "family", fd, readFamily);
 }
 
-export async function updateOpportunity(token: string, _prev: FormState, fd: FormData): Promise<FormState> {
-  return edit<Opportunity>(token, "opportunity", fd, (form) => readOpportunity(form));
+export async function updateOpportunity(id: string, _prev: FormState, fd: FormData): Promise<FormState> {
+  return edit<Opportunity>(id, "opportunity", fd, (form) => readOpportunity(form));
 }

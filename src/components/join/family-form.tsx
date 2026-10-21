@@ -23,9 +23,13 @@ import {
 type Props = {
   initial?: Family;
   action?: (state: FormState, formData: FormData) => Promise<FormState>;
+  /** عند النشر: رقم الحساب مقترحاً للواتساب */
+  whatsapp?: string;
+  /** فرصة يرجع إليها بعد النشر ليقدّم عليها */
+  applyTo?: string;
 };
 
-export function FamilyForm({ initial, action }: Props) {
+export function FamilyForm({ initial, action, whatsapp, applyTo }: Props) {
   const editing = Boolean(initial);
   const [events, setEvents] = useState(Boolean(initial?.events));
   return (
@@ -35,6 +39,7 @@ export function FamilyForm({ initial, action }: Props) {
       pendingLabel={editing ? "جارِ الحفظ…" : undefined}
       note={editing ? "" : undefined}
     >
+      {applyTo ? <input type="hidden" name="apply" value={applyTo} /> : null}
       <FormSection step={1} title="عرّفونا بأسرتكم" description="الاسم والوصف هما أول ما يراه الناس.">
         <TextInput
           label="اسم الأسرة أو المشروع"
@@ -186,7 +191,7 @@ export function FamilyForm({ initial, action }: Props) {
         title="كيف يتواصلون معكم؟"
         description="لا تظهر بياناتكم في الصفحة مباشرة، بل لمن يطلبها فقط."
       >
-        <ContactFields instagram initial={initial?.contact} />
+        <ContactFields instagram initial={initial?.contact} whatsapp={whatsapp} />
       </FormSection>
     </ActionForm>
   );

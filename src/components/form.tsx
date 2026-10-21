@@ -663,10 +663,13 @@ export function ContactFields({
   instagram,
   website,
   initial,
+  whatsapp,
 }: {
   instagram?: boolean;
   website?: boolean;
   initial?: Contact;
+  /** رقم الحساب، يُقترح للإعلان الجديد ويمكن تغييره */
+  whatsapp?: string;
 }) {
   return (
     <>
@@ -679,7 +682,7 @@ export function ContactFields({
           dir="ltr"
           placeholder="05xxxxxxxx"
           autoComplete="tel"
-          defaultValue={initial?.whatsapp}
+          defaultValue={initial ? initial.whatsapp : whatsapp}
           hint="الطريقة الأسهل والأسرع للتواصل."
           className="text-end"
         />

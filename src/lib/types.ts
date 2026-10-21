@@ -22,6 +22,8 @@ type BaseListing = {
   createdAt: string;
   governorate: GovernorateSlug;
   contact: Contact;
+  /** الحساب الذي نشره، ولا يظهر للزوار. الإعلانات التجريبية بلا صاحب */
+  ownerId?: string;
   /** محتوى تجريبي مرفق مع النسخة الأولى */
   seed?: boolean;
   /** أخفاه صاحبه */
@@ -82,6 +84,27 @@ export type Opportunity = BaseListing & {
   closed?: boolean;
   /** آخر مرة أكّد فيها صاحب الفرصة أنها ما زالت متاحة */
   renewedAt?: string;
+  /**
+   * يستقبل المهتمين بالتقديم عبر «فرصة»: يقدّمون بملفاتهم، وصاحب الفرصة يفرزهم
+   * ويتواصل مع من يختار. بدونه يتواصل المهتمون معه مباشرة.
+   */
+  apply?: boolean;
 };
 
 export type Listing = Talent | Family | Opportunity;
+
+/** حالة المتقدم كما يفرزه صاحب الفرصة، ولا يراها المتقدم */
+export type ApplicationStatus = "new" | "shortlisted" | "rejected";
+
+/** تقديم على فرصة بملف موهبة أو صفحة أسرة */
+export type Application = {
+  id: string;
+  opportunityId: string;
+  /** حساب المتقدم */
+  accountId: string;
+  profile: { kind: "talent" | "family"; id: string };
+  /** رسالة قصيرة للناشر */
+  message?: string;
+  status: ApplicationStatus;
+  createdAt: string;
+};
