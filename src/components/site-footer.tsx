@@ -19,7 +19,7 @@ const COLUMNS = [
       { href: "/join/talent", label: "اعرض مهارتك" },
       { href: "/join/family", label: "اعرض منتجات أسرتك" },
       { href: "/join/opportunity", label: "انشر فرصة أو احتياجاً" },
-      { href: "/join", label: "إعلاناتي على هذا الجهاز" },
+      { href: "/account", label: "حسابي وإعلاناتي" },
     ],
   },
   {

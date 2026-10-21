@@ -55,8 +55,11 @@ export function normalizeSaudiMobile(raw: string | undefined | null) {
   return "966" + n.slice(1);
 }
 
+/** 966501234567 ← 0501234567 */
+export const localSaudiMobile = (international: string) => "0" + international.slice(3);
+
 export function formatSaudiMobile(international: string) {
-  const local = "0" + international.slice(3);
+  const local = localSaudiMobile(international);
   const grouped = `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`;
   return grouped.replace(/\d/g, (d) => ARABIC_INDIC[Number(d)]);
 }

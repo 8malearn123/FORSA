@@ -1,18 +1,49 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, CircleCheck, HandHeart, Megaphone } from "lucide-react";
+import { ArrowLeft, CircleCheck, HandHeart, Megaphone, UserRound } from "lucide-react";
 
 import { PageHeader } from "@/components/browse";
 import { Nuqta } from "@/components/brand";
 import { cn } from "@/components/cn";
 import { Dallah } from "@/components/icons";
-import { MyListings } from "@/components/my-listings";
 import { Container } from "@/components/ui";
+import { currentAccount } from "@/lib/auth";
+import { COUNT, countLabel } from "@/lib/format";
+import { listingsOf, readStore } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: "انضم إلى فرصة",
-  description: "اعرض مهارتك، أو منتجات أسرتك، أو انشر فرصة. مجاناً، وبدون حساب.",
+  description: "اعرض مهارتك، أو منتجات أسرتك، أو انشر فرصة. مجاناً، وبدون كلمة مرور.",
 };
+
+/** من دخل يرى عدد إعلاناته ورابط حسابه، ومن لم يدخل يُذكَّر بأن إعلاناته السابقة في حسابه */
+async function AccountNote() {
+  const account = await currentAccount();
+  const count = account ? listingsOf(await readStore(), account.id).length : 0;
+  return (
+    <Link
+      href="/account"
+      className="group flex items-center gap-4 rounded-[24px] rounded-ee-[7px] bg-white p-5 ring-1 ring-ink-100 transition-colors hover:bg-sand-50"
+    >
+      <span className="grid size-11 shrink-0 place-items-center rounded-2xl rounded-ee-[6px] bg-sage-100 text-sage-800">
+        <UserRound className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold text-ink-900">
+          {!account
+            ? "نشرت من قبل؟ ادخل إلى حسابك"
+            : count
+              ? `في حسابك ${countLabel(count, COUNT.listing)}`
+              : "حسابك جاهز، وما نشرت شيئاً بعد"}
+        </span>
+        <span className="mt-0.5 block text-sm text-ink-500">
+          {account ? "عدّل إعلاناتك، أو أخفها، أو احذفها." : "بدون كلمة مرور: يصلك رمز الدخول على واتساب."}
+        </span>
+      </span>
+      <ArrowLeft className="size-5 shrink-0 text-clay-700 transition-transform group-hover:-translate-x-1" />
+    </Link>
+  );
+}
 
 const OPTIONS = [
   {
@@ -45,24 +76,24 @@ const OPTIONS = [
 ] as const;
 
 export default async function JoinPage({ searchParams }: PageProps<"/join">) {
-  const deleted = (await searchParams).deleted === "1";
+  const deleted = (await searchParams).deleted === "account";
   return (
     <>
       {deleted ? (
         <div className="bg-sage-100">
           <Container className="flex items-center gap-3 py-4 font-semibold text-sage-900">
             <CircleCheck className="size-5 text-sage-600" />
-            تم حذف إعلانك وصوره نهائياً. نتمنى لك التوفيق، وحيّاك في أي وقت.
+            تم حذف حسابك وكل إعلاناتك وصورها نهائياً. نتمنى لك التوفيق، وحيّاك في أي وقت.
           </Container>
         </div>
       ) : null}
       <PageHeader
         eyebrow="انضم إلى فرصة"
         title="وش تحب تضيف اليوم؟"
-        description="كل شيء على «فرصة» مجاني، وبدون حساب ولا كلمة مرور. اختر ما يناسبك وابدأ."
+        description="كل شيء على «فرصة» مجاني، وبدون كلمة مرور: تدخل برقم واتسابك. اختر ما يناسبك وابدأ."
       />
       <Container className="flex flex-col gap-8 py-12">
-        <MyListings />
+        {deleted ? null : <AccountNote />}
         <ul className="grid gap-5 md:grid-cols-3">
           {OPTIONS.map((o) => {
             const dark = o.tone === "ink";

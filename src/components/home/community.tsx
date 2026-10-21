@@ -88,7 +88,7 @@ export function Areas({ counts }: { counts: Record<GovernorateSlug, number> }) {
 const STEPS = [
   {
     title: "اعرض ما عندك",
-    body: "أنشئ ملفك أو انشر فرصتك في دقائق، بدون حسابات ولا كلمات مرور.",
+    body: "أنشئ ملفك أو انشر فرصتك في دقائق، برقم واتسابك وبدون كلمات مرور.",
     Scene: PostScene,
   },
   {

@@ -4,7 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-import type { Family, Listing, ListingKind, Opportunity, Talent } from "./types";
+import type { Application, Family, Listing, ListingKind, Opportunity, Talent } from "./types";
 
 /**
  * مخزن بسيط بملف JSON يكفي للنسخة الأولى على خادم واحد.
@@ -22,15 +22,32 @@ export type Report = {
   resolved?: boolean;
 };
 
+/** حساب صاحب الإعلانات: رقم واتساب سعودي (بصيغة 966501234567) أثبت ملكيته برمز دخول */
+export type Account = {
+  id: string;
+  phone: string;
+  createdAt: string;
+  lastLoginAt?: string;
+};
+
+type Session = { accountId: string; createdAt: string; expiresAt: string };
+
 type StoreShape = {
   talents: Talent[];
   families: Family[];
   opportunities: Opportunity[];
-  /** مفتاح الإدارة (مُجزّأ) ← الإعلان الذي يملكه */
+  accounts: Account[];
+  /** مفتاح الجلسة (مُجزّأ) ← الحساب */
+  sessions: Record<string, Session>;
+  /**
+   * روابط الإدارة من قبل الحسابات (مُجزّأة) ← الإعلان. لم نعد نُصدر روابط جديدة،
+   * وكل رابط يُحذف حين يربط صاحبه الإعلان بحسابه.
+   */
   owners: Record<string, { kind: ListingKind; id: string }>;
   reports: Report[];
   /** كم زائراً طلب وسائل التواصل لكل إعلان — يظهر لصاحبه فقط */
   reveals: Record<string, number>;
+  applications: Application[];
 };
 
 export const DATA_DIR = process.env.FORSA_DATA_DIR ?? path.join(process.cwd(), ".data");
@@ -44,9 +61,12 @@ const empty = (): StoreShape => ({
   talents: [],
   families: [],
   opportunities: [],
+  accounts: [],
+  sessions: {},
   owners: {},
   reports: [],
   reveals: {},
+  applications: [],
 });
 
 export async function readStore(): Promise<StoreShape> {
@@ -87,31 +107,22 @@ export const newId = () => BigInt(`0x${randomBytes(8).toString("hex")}`).toStrin
 
 export const newToken = () => randomBytes(18).toString("base64url");
 
+/** يحفظ إعلاناً جديداً ويرجع معرّفه */
 export async function insertListing(listing: Listing) {
-  const token = newToken();
-  await mutateStore((store) => {
+  return mutateStore((store) => {
     const list = collectionOf(store, listing.kind);
     // احتياط نادر جداً: لو تكرر المعرّف نولّد غيره قبل الحفظ
     while (list.some((l) => l.id === listing.id)) listing.id = newId();
     list.unshift(listing);
-    store.owners[hashToken(token)] = { kind: listing.kind, id: listing.id };
+    return listing.id;
   });
-  return token;
 }
 
-export async function findOwned(token: string) {
-  const [listing] = await findOwnedMany([token]);
-  return listing?.listing ?? null;
-}
-
-/** يبحث عن عدة روابط إدارة بقراءة واحدة للمخزن */
-export async function findOwnedMany(tokens: string[]) {
+/** الإعلان الذي يفتحه رابط إدارة قديم */
+export async function findByLegacyLink(token: string) {
   const store = await readStore();
-  return tokens.flatMap((token) => {
-    const owner = store.owners[hashToken(token)];
-    const listing = owner ? collectionOf(store, owner.kind).find((l) => l.id === owner.id) : undefined;
-    return listing ? [{ token, listing }] : [];
-  });
+  const owner = store.owners[hashToken(token)];
+  return owner ? (collectionOf(store, owner.kind).find((l) => l.id === owner.id) ?? null) : null;
 }
 
 export function collectionOf(store: StoreShape, kind: ListingKind): Listing[] {
@@ -119,6 +130,41 @@ export function collectionOf(store: StoreShape, kind: ListingKind): Listing[] {
   if (kind === "family") return store.families;
   return store.opportunities;
 }
+
+/** إعلانات الحساب، الأحدث أولاً */
+export function listingsOf(store: StoreShape, accountId: string): Listing[] {
+  return [...store.talents, ...store.families, ...store.opportunities]
+    .filter((l) => l.ownerId === accountId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/** الإعلان إن كان هذا الحساب صاحبه، وإلا null */
+export const ownedListing = (store: StoreShape, accountId: string, kind: ListingKind, id: string) =>
+  collectionOf(store, kind).find((l) => l.id === id && l.ownerId === accountId) ?? null;
+
+/**
+ * يحذف الإعلان وما يتعلق به (عدد الطلبات، بلاغاته، رابطه القديم، والتقديمات عليه أو به)،
+ * ويرجعه لتُحذف صوره بعد الحفظ
+ */
+export function removeListing(store: StoreShape, kind: ListingKind, id: string) {
+  const list = collectionOf(store, kind);
+  const index = list.findIndex((l) => l.id === id);
+  if (index < 0) return null;
+  const [listing] = list.splice(index, 1);
+  for (const [key, owner] of Object.entries(store.owners)) {
+    if (owner.kind === kind && owner.id === id) delete store.owners[key];
+  }
+  delete store.reveals[listingKey(kind, id)];
+  for (const r of store.reports) if (r.kind === kind && r.listingId === id) r.resolved = true;
+  store.applications = store.applications.filter((a) =>
+    kind === "opportunity" ? a.opportunityId !== id : !(a.profile.kind === kind && a.profile.id === id),
+  );
+  return listing;
+}
+
+/** ملف المتقدم كما هو الآن (تعديلاته تظهر لصاحب الفرصة، وحذفه يحذف التقديم) */
+export const profileOf = (store: StoreShape, profile: Application["profile"]) =>
+  (collectionOf(store, profile.kind).find((l) => l.id === profile.id) as Talent | Family | undefined) ?? null;
 
 export const listingKey = (kind: ListingKind, id: string) => `${kind}:${id}`;
 

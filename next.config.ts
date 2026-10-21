@@ -23,8 +23,12 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // روابط الإدارة سرية: لا نرسلها في ترويسة Referer لأي موقع آخر
+        // روابط الإدارة القديمة سرية (وقد تمر عبر صفحة الدخول): لا نرسلها في ترويسة Referer لأي موقع
         source: "/manage/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+      {
+        source: "/login",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
       },
     ];

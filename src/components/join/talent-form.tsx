@@ -22,9 +22,13 @@ type Props = {
   /** عند التعديل: البيانات الحالية ودالة الحفظ */
   initial?: Talent;
   action?: (state: FormState, formData: FormData) => Promise<FormState>;
+  /** عند النشر: رقم الحساب مقترحاً للواتساب */
+  whatsapp?: string;
+  /** فرصة يرجع إليها بعد النشر ليقدّم عليها */
+  applyTo?: string;
 };
 
-export function TalentForm({ initial, action }: Props) {
+export function TalentForm({ initial, action, whatsapp, applyTo }: Props) {
   const editing = Boolean(initial);
   return (
     <ActionForm
@@ -33,6 +37,7 @@ export function TalentForm({ initial, action }: Props) {
       pendingLabel={editing ? "جارِ الحفظ…" : undefined}
       note={editing ? "" : undefined}
     >
+      {applyTo ? <input type="hidden" name="apply" value={applyTo} /> : null}
       <FormSection step={1} title="عرّفنا بنفسك" description="هذا ما يراه الناس أولاً في بطاقتك.">
         <div className="grid gap-5 sm:grid-cols-2">
           <TextInput
@@ -190,7 +195,7 @@ export function TalentForm({ initial, action }: Props) {
         title="كيف يتواصلون معك؟"
         description="لا تظهر بياناتك في الصفحة مباشرة، بل لمن يضغط «أظهر وسائل التواصل» فقط."
       >
-        <ContactFields website initial={initial?.contact} />
+        <ContactFields website initial={initial?.contact} whatsapp={whatsapp} />
       </FormSection>
     </ActionForm>
   );

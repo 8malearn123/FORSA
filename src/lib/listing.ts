@@ -1,4 +1,18 @@
-import type { Family, Listing, Opportunity } from "./types";
+import type { Family, Listing, ListingKind, Opportunity } from "./types";
+
+export const KINDS: ListingKind[] = ["talent", "family", "opportunity"];
+
+export const isKind = (value: unknown): value is ListingKind => KINDS.includes(value as ListingKind);
+
+/** معرّف إعلان صالح للروابط: حروف لاتينية صغيرة وأرقام (وشرطات في الأمثلة التجريبية) */
+export const isListingId = (value: unknown): value is string =>
+  typeof value === "string" && /^[a-z0-9-]{1,60}$/.test(value);
+
+export const KIND_NAME: Record<ListingKind, string> = {
+  talent: "ملف موهبة",
+  family: "صفحة أسرة منتجة",
+  opportunity: "فرصة",
+};
 
 /** بعد هذه المدة دون تجديد تُعلَّم الفرصة بأنها «قد تكون انتهت» */
 export const STALE_DAYS = 30;
