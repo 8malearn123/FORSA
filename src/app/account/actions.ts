@@ -151,7 +151,8 @@ export async function applyToOpportunity(_prev: ApplyState, formData: FormData):
       .slice(0, 500) || undefined;
 
   const key = `apply:${account.id}`;
-  if (!take(key, APPLIES_PER_DAY, DAY)) return { error: "قدّمت على فرص كثيرة اليوم. حاول مرة أخرى غداً." };
+  if (!(await take(key, APPLIES_PER_DAY, DAY)))
+    return { error: "قدّمت على فرص كثيرة اليوم. حاول مرة أخرى غداً." };
   const result = await mutateStore((store) => {
     const opportunity = store.opportunities.find((o) => o.id === opportunityId);
     if (!opportunity?.apply || opportunity.hidden || opportunity.moderated) return "missing";
@@ -175,7 +176,7 @@ export async function applyToOpportunity(_prev: ApplyState, formData: FormData):
     return "done";
   });
   if (result !== "done") {
-    release(key);
+    await release(key);
     return { error: APPLY_ERRORS[result] };
   }
   redirect(`/opportunities/${opportunityId}?applied=1#apply`);

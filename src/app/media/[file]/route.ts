@@ -1,6 +1,6 @@
 import { readMedia } from "@/lib/uploads";
 
-/** يقدّم الصور التي رفعها المستخدمون من مجلد البيانات */
+/** يقدّم الصور التي رفعها المستخدمون من Supabase Storage */
 export async function GET(_request: Request, ctx: RouteContext<"/media/[file]">) {
   const { file } = await ctx.params;
   const data = await readMedia(file);

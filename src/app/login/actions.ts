@@ -50,8 +50,9 @@ export async function login(_prev: LoginState, fd: FormData): Promise<LoginState
     const retry = (error: string): LoginState => ({ step: "code", phone: local, challenge, remember, error });
     const code = toLatinDigits(String(fd.get("code") ?? "")).replace(/\D/g, "");
     if (code.length !== 6) return retry("اكتب الرمز المكوّن من ٦ أرقام.");
-    if (!take(`code-try:${visitor}`, 30, HOUR)) return retry("محاولات كثيرة خلال وقت قصير. حاول بعد قليل.");
-    const result = checkCode(challenge, code);
+    if (!(await take(`code-try:${visitor}`, 30, HOUR)))
+      return retry("محاولات كثيرة خلال وقت قصير. حاول بعد قليل.");
+    const result = await checkCode(challenge, code);
     if (result.status === "wrong") return retry("الرمز غير صحيح. تأكد من آخر رمز وصلك على واتساب.");
     if (result.status === "expired") return retry("انتهت صلاحية هذا الرمز. اطلب رمزاً جديداً.");
     await startSession(result.phone, remember);

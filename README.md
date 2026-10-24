@@ -30,7 +30,7 @@ The interface is Arabic-only and RTL. Forsa is only a place to discover: it has 
 - **Uploaded photos are re-encoded on the server** with `sharp` and all metadata is stripped, including GPS location. This matters for families photographing products at home. Photos are also resized in the browser before upload so posting is quick on mobile data.
 - A **honeypot field** and **per-visitor rate limits** catch spam and scraping: 8 new listings an hour, 30 contact reveals an hour (each listing counts once a day per visitor), and 10 reports an hour. Visitors are identified by a hash of their IP address, taken from `X-Real-IP` or the last `X-Forwarded-For` entry, so the reverse proxy in front of the app must set one of those headers. Raw IP addresses aren't stored. Every listing has a **report** button.
 - **Accounts log in with a WhatsApp code, not a password.** Every management action checks the session and that the account owns the listing, so a forwarded page or link gives nobody else control.
-  - **Codes.** Codes are 6 digits, work once, and expire after 10 minutes. Five wrong tries cancel a code. Codes are kept in server memory only and are never written to disk.
+  - **Codes.** Codes are 6 digits, work once, and expire after 10 minutes. Five wrong tries cancel a code. Only a SHA-256 hash of each code is stored (in Supabase), never the code itself.
   - **Limits.** Sending is limited to one code a minute and 5 an hour per number, 10 an hour per visitor, and 500 an hour overall. This protects people from being spammed with codes and protects the messaging budget.
   - **Sessions.** Sessions are random tokens in an `httpOnly` cookie and are stored hashed (SHA-256). A session lasts 12 hours, or 60 days with "remember me". An account keeps at most 10 open sessions.
   - **Account number.** The account's number isn't shown to anyone unless the owner also uses it as a contact method on a listing.
@@ -60,7 +60,7 @@ Everything comes from the logo (`public/brand/forsa-logo.svg`), which is used ex
 
 - Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS v4, TypeScript, Zod, sharp, lucide-react.
 - Server Components for all data pages. Server Actions handle posting, contact reveal, reports, and listing management. Forms work before JavaScript loads. After it loads, they keep entered values when validation fails or the connection drops, and they wait for photos to finish resizing before sending.
-- **Data layer.** `src/lib/store.ts` is a small JSON-file store (`.data/forsa.json`, uploads in `.data/uploads/`) with serialized atomic writes. All reads go through `src/lib/data.ts`. To move to a database such as Postgres or Supabase, replace those two files. Set `FORSA_DATA_DIR` to put the data directory somewhere persistent.
+- **Data layer.** Supabase, reached from the server only with the service-role key (`src/lib/supabase.ts`). `src/lib/store.ts` keeps all listings, accounts and sessions as one JSON document in the `forsa_store` table, written with optimistic concurrency (a write retries if another request saved first). All reads go through `src/lib/data.ts`. Rate limits (`forsa_hits`) and pending login codes (`forsa_codes`) are tables too, so every serverless instance shares them. Uploaded photos live in the private `media` Storage bucket and are served through `/media/[file]`. The schema is in `supabase/migrations/`; every table has RLS on with no policies, so the browser can never reach them.
 
 ```
 src/
@@ -78,10 +78,16 @@ pnpm lint
 pnpm build && pnpm start
 ```
 
+Required environment variables (Vercel: Project → Settings → Environment Variables; locally: `.env.local`):
+
+- `SUPABASE_URL`: the project URL, e.g. `https://<ref>.supabase.co`.
+- `SUPABASE_SERVICE_ROLE_KEY`: the **secret** service-role key (Supabase → Project Settings → API keys). Server-only: never prefix it with `NEXT_PUBLIC_`.
+
+Apply `supabase/migrations/*.sql` to a new project once (SQL editor or `supabase db push`).
+
 Optional environment variables:
 
 - `NEXT_PUBLIC_SITE_URL`: the public URL, used for metadata, sitemap, and share links.
-- `FORSA_DATA_DIR`: where listings and uploads are stored. Defaults to `./.data`.
 - `FORSA_DEMO=off`: hides the demo content, for launch.
 - `FORSA_ADMIN_KEY`: a secret of 12 characters or more that turns on the moderation page at `/admin`. If it isn't set, that page returns 404.
 - `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`: set this to a stable value if you run more than one instance.
@@ -97,7 +103,7 @@ Optional environment variables:
 
 > Without the WhatsApp settings, `pnpm dev` shows the login code on the page and in the server log, so you can test everything locally. In production nobody can log in, and so nobody can post, until they're set.
 
-> The JSON store needs a persistent disk, so run it on a normal Node server or a VPS. Serverless platforms have ephemeral filesystems, so move the data layer to a database before deploying there. The rate limits and pending login codes are kept in memory for a single server process too: with several instances, move them to a shared store such as Redis.
+> Everything stateful lives in Supabase, so the app runs on serverless platforms such as Vercel. Put the Vercel functions in the region closest to the Supabase project (Frankfurt, `fra1`, for `eu-central-1`) to keep page loads fast.
 
 ## Photo credits
 

@@ -496,7 +496,7 @@ async function publish<T>(
     if (!result.ok) return result.state;
     saved = result.saved;
     const key = `post:${await visitorKey()}`;
-    if (!take(key, POSTS_PER_HOUR, HOUR)) {
+    if (!(await take(key, POSTS_PER_HOUR, HOUR))) {
       await discardImages(saved);
       return limited();
     }
@@ -515,7 +515,7 @@ async function publish<T>(
     }
   } catch (error) {
     console.error("[forsa] publish failed", error);
-    if (reserved) release(reserved);
+    if (reserved) await release(reserved).catch(() => undefined);
     await discardImages(saved).catch(() => undefined);
     return fail({}, UNEXPECTED);
   }
