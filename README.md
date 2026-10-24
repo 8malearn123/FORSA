@@ -105,8 +105,10 @@ Optional environment variables:
   - `FORSA_RAZAN_KEY`: a secret of 24 characters or more, shared with Razan (`RAZAN_FORSA_KEY` there). Without it nothing is queued.
   - Messages go to every number in `FORSA_ADMIN_PHONES`, and links in them use `NEXT_PUBLIC_SITE_URL`.
   - Razan polls `GET /api/v1/notifications?status=pending&limit=50` every minute and confirms each one with `POST /api/v1/notifications/{id}/ack` (`{"status":"sent"}` or `{"status":"failed","error":"…"}`). Both need `Authorization: Bearer <FORSA_RAZAN_KEY>`. A notification that fails 3 times is closed.
+  - **Login codes.** When `FORSA_RAZAN_KEY` is set, login codes go through Razan instead of the WhatsApp Cloud API. They're queued as `otp` notifications, served before the team's messages, and dropped from the queue once they expire.
+  - **Instant delivery.** After queuing, the app sends an empty ping on Razan's Supabase Realtime channel, so Razan collects the queue at once instead of waiting for its next poll. Set `FORSA_RAZAN_PING_URL` (the Supabase project URL of Razan's office) and `FORSA_RAZAN_PING_KEY` (that project's public anon key). Without them, messages arrive within a minute.
 
-> Without the WhatsApp settings, `pnpm dev` shows the login code on the page and in the server log, so you can test everything locally. In production nobody can log in, and so nobody can post, until they're set.
+> Without Razan or the WhatsApp settings, `pnpm dev` shows the login code on the page and in the server log, so you can test everything locally. In production nobody can log in, and so nobody can post, until one of them is set.
 
 > Everything stateful lives in Supabase, so the app runs on serverless platforms such as Vercel. Put the Vercel functions in the region closest to the Supabase project (Mumbai, `bom1`, for `ap-south-1`) to keep page loads fast.
 

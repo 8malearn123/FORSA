@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomInt } from "node:crypto";
 
+import { queueLoginCode, razanEnabled } from "./notifications";
 import { HOUR, MINUTE, release, take } from "./rate-limit";
 import { newToken } from "./store";
 import { db, must } from "./supabase";
@@ -35,9 +36,9 @@ export type Issued =
   | { status: "failed" };
 
 /**
- * يولّد رمزاً من ٦ أرقام ويرسله إلى واتساب الرقم. الحدود تحمي أصحاب الأرقام من الإزعاج
- * وتحمي ميزانية الرسائل: دقيقة بين كل رمزين، و٥ رموز في الساعة لكل رقم، و١٠ لكل زائر.
- * أثناء التطوير، ودون إعداد واتساب، يُرجع الرمز ليظهر في الصفحة بدل إرساله.
+ * يولّد رمزاً من ٦ أرقام ويرسله إلى واتساب الرقم عبر رزان (FORSA_RAZAN_KEY)، وإلا عبر WhatsApp Cloud API.
+ * الحدود تحمي أصحاب الأرقام من الإزعاج وتحمي رقم الإرسال: دقيقة بين كل رمزين، و٥ رموز في الساعة
+ * لكل رقم، و١٠ لكل زائر. أثناء التطوير، ودون أي منهما، يُرجع الرمز ليظهر في الصفحة بدل إرساله.
  */
 export async function issueCode(phone: string, visitor: string): Promise<Issued> {
   const wait = `code-wait:${phone}`;
@@ -59,20 +60,25 @@ export async function issueCode(phone: string, visitor: string): Promise<Issued>
   // الرمز الجديد يلغي ما قبله لنفس الرقم، بعد التأكد من إرساله فقط
   const sent = async () => must(await codes().delete().eq("phone", phone).neq("id", id));
 
-  if (!whatsappEnabled() && process.env.NODE_ENV !== "production") {
+  if (!razanEnabled() && !whatsappEnabled() && process.env.NODE_ENV !== "production") {
     console.info(`[forsa] رمز الدخول للرقم ${phone}: ${code}`);
     await sent();
     return { status: "sent", id, devCode: code };
   }
   try {
-    if (await sendLoginCode(phone, code)) {
+    const delivered = razanEnabled()
+      ? await queueLoginCode(phone, code, expires_at)
+      : await sendLoginCode(phone, code);
+    if (delivered) {
       await sent();
       return { status: "sent", id };
     }
   } catch (error) {
-    console.error("[forsa] whatsapp send failed", error);
+    console.error("[forsa] login code send failed", error);
   }
-  if (!whatsappEnabled()) console.error("[forsa] WhatsApp is not configured, so login codes can't be sent");
+  if (!razanEnabled() && !whatsappEnabled()) {
+    console.error("[forsa] Neither Razan nor WhatsApp is configured, so login codes can't be sent");
+  }
   // لم يُرسل شيء، فلا نحسبه على صاحب الرقم
   must(await codes().delete().eq("id", id));
   await Promise.all([wait, ...reserved].map(release));
