@@ -9,7 +9,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { Badge, Container } from "@/components/ui";
 import { adminEnabled, adminKeyEnabled, adminVia } from "@/lib/admin";
 import { formatNumber, timeAgo } from "@/lib/format";
-import { pathOf, titleOf } from "@/lib/listing";
+import { pathOf, REASON_NAME, titleOf } from "@/lib/listing";
 import { listingKey, readStore } from "@/lib/store";
 import { governorateName } from "@/lib/taxonomy";
 import type { Listing, ListingKind } from "@/lib/types";
@@ -26,14 +26,6 @@ const KIND_NAME: Record<ListingKind, string> = {
   talent: "موهبة",
   family: "أسرة منتجة",
   opportunity: "فرصة",
-};
-
-const REASON_NAME: Record<string, string> = {
-  "wrong-info": "معلومات غير صحيحة",
-  inappropriate: "محتوى غير لائق",
-  scam: "احتيال أو طلب مبالغ",
-  expired: "منتهٍ أو مكرر",
-  other: "سبب آخر",
 };
 
 function ModerateButton({

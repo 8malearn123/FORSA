@@ -101,6 +101,10 @@ Optional environment variables:
     - a code expiry of 10 minutes
   - `WHATSAPP_OTP_LANGUAGE` (optional): the template's language. Defaults to `ar`.
   - `WHATSAPP_API_VERSION` (optional): the Graph API version. Defaults to `v26.0`.
+- **Team notifications through Razan.** Razan, the WhatsApp assistant on the Qimma platform, sends the team a WhatsApp message for every new report and every new listing:
+  - `FORSA_RAZAN_KEY`: a secret of 24 characters or more, shared with Razan (`RAZAN_FORSA_KEY` there). Without it nothing is queued.
+  - Messages go to every number in `FORSA_ADMIN_PHONES`, and links in them use `NEXT_PUBLIC_SITE_URL`.
+  - Razan polls `GET /api/v1/notifications?status=pending&limit=50` every minute and confirms each one with `POST /api/v1/notifications/{id}/ack` (`{"status":"sent"}` or `{"status":"failed","error":"…"}`). Both need `Authorization: Bearer <FORSA_RAZAN_KEY>`. A notification that fails 3 times is closed.
 
 > Without the WhatsApp settings, `pnpm dev` shows the login code on the page and in the server log, so you can test everything locally. In production nobody can log in, and so nobody can post, until they're set.
 

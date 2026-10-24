@@ -14,6 +14,15 @@ export const KIND_NAME: Record<ListingKind, string> = {
   opportunity: "فرصة",
 };
 
+/** أسباب البلاغ كما تظهر للفريق */
+export const REASON_NAME: Record<string, string> = {
+  "wrong-info": "معلومات غير صحيحة",
+  inappropriate: "محتوى غير لائق",
+  scam: "احتيال أو طلب مبالغ",
+  expired: "منتهٍ أو مكرر",
+  other: "سبب آخر",
+};
+
 /** بعد هذه المدة دون تجديد تُعلَّم الفرصة بأنها «قد تكون انتهت» */
 export const STALE_DAYS = 30;
 /** لا يظهر زر التجديد إلا بعد هذه المدة، حتى لا تُستغل لإبقاء الفرصة في الأعلى */

@@ -18,7 +18,7 @@ const secret = () => process.env.FORSA_ADMIN_KEY ?? "";
 export const adminKeyEnabled = () => secret().length >= 12;
 
 /** أرقام المشرفين بصيغة 966501234567، مفصولة بفواصل في متغير البيئة */
-const adminPhones = () =>
+export const adminPhones = () =>
   (process.env.FORSA_ADMIN_PHONES ?? "")
     .split(",")
     .map((p) => normalizeSaudiMobile(p))

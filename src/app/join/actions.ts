@@ -1,11 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { currentAccount } from "@/lib/auth";
 import { COUNT, countLabel, formatNumber } from "@/lib/format";
-import { imagesOf } from "@/lib/listing";
+import { imagesOf, KIND_NAME, pathOf, titleOf } from "@/lib/listing";
+import { notifyAdmins, siteLink } from "@/lib/notifications";
 import { HOUR, release, take, visitorKey } from "@/lib/rate-limit";
 import { collectionOf, insertListing, mutateStore, newId, ownedListing, readStore } from "@/lib/store";
 import {
@@ -507,6 +509,15 @@ async function publish<T>(
       ownerId: account.id,
     });
     path = `/account/${listing.kind}/${await insertListing(listing)}?new=1`;
+    after(() =>
+      notifyAdmins(
+        [
+          "🆕 إعلان جديد في فرصة",
+          `${KIND_NAME[listing.kind]}: ${titleOf(listing)}`,
+          siteLink(pathOf(listing)),
+        ].join("\n"),
+      ),
+    );
     // من أنشأ ملفه ليقدّم على فرصة يرجع إليها مباشرة ليكمل التقديم
     const target = get(fd, "apply");
     if (target && listing.kind !== "opportunity") {
