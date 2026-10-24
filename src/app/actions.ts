@@ -2,7 +2,10 @@
 
 import { getFamily, getOpportunity, getTalent } from "@/lib/data";
 import { contactChannels, type ContactChannel } from "@/lib/contact";
-import { isKind, titleOf } from "@/lib/listing";
+import { after } from "next/server";
+
+import { isKind, KIND_NAME, pathOf, REASON_NAME, titleOf } from "@/lib/listing";
+import { notifyAdmins, siteLink } from "@/lib/notifications";
 import { DAY, HOUR, release, take, visitorKey } from "@/lib/rate-limit";
 import { addReport, countReveal, listingKey } from "@/lib/store";
 import type { Listing, ListingKind } from "@/lib/types";
@@ -71,5 +74,17 @@ export async function reportListing(_prev: ReportState, formData: FormData): Pro
     reason: String(reason),
     note: note || undefined,
   });
+  after(() =>
+    notifyAdmins(
+      [
+        "🚩 بلاغ جديد في فرصة",
+        `${KIND_NAME[listing.kind]}: ${titleOf(listing)}`,
+        `السبب: ${REASON_NAME[String(reason)] ?? reason}`,
+        ...(note ? [`ملاحظة: ${note}`] : []),
+        `الإعلان: ${siteLink(pathOf(listing))}`,
+        `الإشراف: ${siteLink("/admin")}`,
+      ].join("\n"),
+    ),
+  );
   return { status: "done" };
 }
