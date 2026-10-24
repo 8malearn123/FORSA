@@ -103,7 +103,7 @@ Optional environment variables:
 
 > Without the WhatsApp settings, `pnpm dev` shows the login code on the page and in the server log, so you can test everything locally. In production nobody can log in, and so nobody can post, until they're set.
 
-> Everything stateful lives in Supabase, so the app runs on serverless platforms such as Vercel. Put the Vercel functions in the region closest to the Supabase project (Frankfurt, `fra1`, for `eu-central-1`) to keep page loads fast.
+> Everything stateful lives in Supabase, so the app runs on serverless platforms such as Vercel. Put the Vercel functions in the region closest to the Supabase project (Mumbai, `bom1`, for `ap-south-1`) to keep page loads fast.
 
 ## Photo credits
 
