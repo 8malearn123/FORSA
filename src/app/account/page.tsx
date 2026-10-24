@@ -8,6 +8,7 @@ import {
   Plus,
   Send,
   ShieldCheck,
+  ShieldUser,
   Trash2,
 } from "lucide-react";
 
@@ -15,6 +16,7 @@ import { Nuqta, Sparks } from "@/components/brand";
 import { ListingStatus } from "@/components/listing-status";
 import { SubmitButton } from "@/components/submit-button";
 import { Badge, ButtonLink, Container, EmptyState } from "@/components/ui";
+import { isAdmin } from "@/lib/admin";
 import { requireAccount } from "@/lib/auth";
 import { COUNT, countLabel, formatNumber, timeAgo } from "@/lib/format";
 import { KIND_NAME, titleOf } from "@/lib/listing";
@@ -202,6 +204,12 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         </section>
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+          {(await isAdmin()) ? (
+            <ButtonLink href="/admin" variant="dark" size="md">
+              <ShieldUser className="size-4" />
+              لوحة الإشراف
+            </ButtonLink>
+          ) : null}
           <div className="rounded-[28px] rounded-ee-[8px] bg-white p-6 ring-1 ring-ink-100">
             <h2 className="flex items-center gap-2 font-display text-lg font-extrabold text-ink-900">
               <ShieldCheck className="size-5 text-sage-600" />

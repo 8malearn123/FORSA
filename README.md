@@ -19,7 +19,7 @@ The interface is Arabic-only and RTL. Forsa is only a place to discover: it has 
 | **My account** (`/account`)                             | Every listing the account owns, with its status and applicant counts, and every opportunity the account applied to (an application can be withdrawn). Log out, log out of every device, or delete the account with all its listings, applications, and photos                                                                                     |
 | **Manage** (`/account/[kind]/[id]`)                     | Only the owner's account can open it. The owner can **edit** the listing (keep, remove, or replace photos), hide or show it, mark an opportunity as filled, toggle availability, see how many people asked for their contact details, or delete it permanently (photos included)                                                                  |
 | **Applicants** (`/account/opportunity/[id]/applicants`) | The poster screens applicants. Tabs for awaiting screening, shortlisted, and rejected. Sorted by best fit by default, and each applicant shows what matches the opportunity (same field and governorate, availability, matching skills or products). A WhatsApp button opens a ready-made message. Applicants never see the screening result      |
-| **Moderation** (`/admin`)                               | For the initiative team only, and switched on by `FORSA_ADMIN_KEY`. Shows open reports (hide, delete, or close each one) and recent listings with hide and delete actions. A listing hidden by moderators stays hidden: its owner sees a notice and can edit or delete it, but can't make it visible again                                        |
+| **Moderation** (`/admin`)                               | For the initiative team only: their WhatsApp numbers (`FORSA_ADMIN_PHONES`) or a key (`FORSA_ADMIN_KEY`). Shows open reports (hide, delete, or close each one) and recent listings with hide and delete actions. A listing hidden by moderators stays hidden: its owner sees a notice and can edit or delete it, but can't make it visible again  |
 | **About** (`/about`)                                    | The initiative, how it works, safe-contact tips, success partners, FAQ. Photo credits are at `/credits`                                                                                                                                                                                                                                           |
 
 ### Trust and privacy decisions
@@ -89,7 +89,8 @@ Optional environment variables:
 
 - `NEXT_PUBLIC_SITE_URL`: the public URL, used for metadata, sitemap, and share links.
 - `FORSA_DEMO=off`: hides the demo content, for launch.
-- `FORSA_ADMIN_KEY`: a secret of 12 characters or more that turns on the moderation page at `/admin`. If it isn't set, that page returns 404.
+- `FORSA_ADMIN_PHONES`: the WhatsApp numbers of the initiative team, comma-separated (`0501234567` or `966501234567`). Logging in normally with one of them opens the moderation page at `/admin`, linked from «حسابي».
+- `FORSA_ADMIN_KEY`: a secret of 12 characters or more that also opens `/admin`, for when WhatsApp login isn't available. If neither this nor `FORSA_ADMIN_PHONES` is set, that page returns 404, and without the key it returns 404 to everyone but the team's numbers.
 - `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`: set this to a stable value if you run more than one instance.
 - **WhatsApp login codes.** These are sent through Meta's WhatsApp Cloud API:
   - `WHATSAPP_TOKEN`: a system user access token.
