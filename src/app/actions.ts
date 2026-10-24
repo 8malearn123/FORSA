@@ -33,9 +33,9 @@ export async function revealContact(kind: ListingKind, id: string): Promise<Reve
   const visitor = await visitorKey();
   const key = listingKey(listing.kind, listing.id);
   const onceKey = `reveal-once:${visitor}:${key}`;
-  const firstToday = take(onceKey, 1, DAY);
-  if (firstToday && !take(`reveal:${visitor}`, 30, HOUR)) {
-    release(onceKey);
+  const firstToday = await take(onceKey, 1, DAY);
+  if (firstToday && !(await take(`reveal:${visitor}`, 30, HOUR))) {
+    await release(onceKey);
     return { status: "limited" };
   }
   if (firstToday) await countReveal(listing.kind, listing.id);
@@ -57,8 +57,8 @@ export async function reportListing(_prev: ReportState, formData: FormData): Pro
   const visitor = await visitorKey();
   const key = listingKey(listing.kind, listing.id);
   // بلاغ واحد يومياً من كل زائر على الإعلان نفسه يكفي، والتكرار يُقبل بصمت
-  if (!take(`report-once:${visitor}:${key}`, 1, DAY)) return { status: "done" };
-  if (!take(`report:${visitor}`, 10, HOUR)) {
+  if (!(await take(`report-once:${visitor}:${key}`, 1, DAY))) return { status: "done" };
+  if (!(await take(`report:${visitor}`, 10, HOUR))) {
     return { status: "error", message: "أرسلت بلاغات كثيرة خلال وقت قصير. حاول مرة أخرى لاحقاً." };
   }
   const note = String(formData.get("note") ?? "")

@@ -4,16 +4,16 @@ import { createHash } from "node:crypto";
 
 import { headers } from "next/headers";
 
+import { db, must } from "./supabase";
+
 export const MINUTE = 60_000;
 export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 
 /**
- * حدود بسيطة في الذاكرة لحماية الإجراءات العامة (كشف التواصل، البلاغات، النشر).
- * تكفي لخادم واحد؛ عند التوسع تُنقل إلى مخزن مشترك.
+ * حدود بسيطة لحماية الإجراءات العامة (كشف التواصل، البلاغات، النشر).
+ * تُحفظ في جدول forsa_hits على Supabase، فتشترك فيها كل نسخ الخادم.
  */
-const shared = globalThis as typeof globalThis & { __forsaLimits?: Map<string, number[]> };
-const buckets = (shared.__forsaLimits ??= new Map<string, number[]>());
 
 /**
  * معرّف الزائر من آخر عنوان أضافه الوكيل العكسي الموثوق (X-Real-IP أو آخر قيمة
@@ -31,37 +31,15 @@ export async function visitorKey() {
   return createHash("sha256").update(`forsa:${ip}`).digest("hex").slice(0, 20);
 }
 
-let lastSweep = 0;
-
-function sweep(now: number) {
-  if (now - lastSweep < MINUTE && buckets.size < 5_000) return;
-  lastSweep = now;
-  for (const [key, hits] of buckets) {
-    const recent = hits.filter((t) => now - t < DAY);
-    if (recent.length) buckets.set(key, recent);
-    else buckets.delete(key);
-  }
-}
-
 /**
  * يحجز «محاولة» ضمن الحد، ويرجع false إن تجاوزه.
- * التحقق والحجز يتمان معاً دون انتظار، فلا تتسابق الطلبات المتزامنة على نفس الحد.
+ * التحقق والحجز يتمان معاً في قاعدة البيانات بقفل على المفتاح، فلا تتسابق الطلبات المتزامنة على نفس الحد.
  */
-export function take(key: string, limit: number, windowMs: number) {
-  const now = Date.now();
-  sweep(now);
-  const hits = (buckets.get(key) ?? []).filter((t) => now - t < windowMs);
-  if (hits.length >= limit) {
-    buckets.set(key, hits);
-    return false;
-  }
-  hits.push(now);
-  buckets.set(key, hits);
-  return true;
+export async function take(key: string, limit: number, windowMs: number): Promise<boolean> {
+  return must(await db().rpc("forsa_take", { p_key: key, p_limit: limit, p_window_ms: windowMs }));
 }
 
 /** يعيد محاولة محجوزة (مثلاً إن فشل النشر لسبب لا علاقة له بالزائر) */
-export function release(key: string) {
-  const hits = buckets.get(key);
-  if (hits?.length) hits.pop();
+export async function release(key: string) {
+  must(await db().rpc("forsa_release", { p_key: key }));
 }

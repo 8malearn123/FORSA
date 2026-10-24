@@ -1,11 +1,12 @@
 import "server-only";
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
-
 import sharp from "sharp";
 
-import { UPLOADS_DIR, newId } from "./store";
+import { newId } from "./store";
+import { db, must } from "./supabase";
+
+/** حاوية خاصة على Supabase Storage، والصور تُقدَّم عبر مسار /media في التطبيق */
+const bucket = () => db().storage.from("media");
 
 export const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
 export const MEDIA_NAME = /^[a-z0-9]{8,40}\.webp$/;
@@ -33,24 +34,20 @@ export async function saveImage(entry: FormDataEntryValue | null): Promise<strin
     throw new UploadError("تعذّر قراءة إحدى الصور. جرّب صورة بصيغة JPG أو PNG.");
   }
   const name = `${newId()}${newId()}.webp`;
-  await fs.mkdir(UPLOADS_DIR, { recursive: true });
-  await fs.writeFile(path.join(UPLOADS_DIR, name), output);
+  must(await bucket().upload(name, output, { contentType: "image/webp", cacheControl: "31536000" }));
   return `/media/${name}`;
 }
 
 /** حذف صور مرفوعة (عند فشل النشر أو حذف الإعلان) */
 export async function discardImages(sources: (string | undefined)[]) {
-  for (const src of sources) {
-    const name = src?.replace(/^\/media\//, "");
-    if (name && MEDIA_NAME.test(name)) await fs.rm(path.join(UPLOADS_DIR, name), { force: true });
-  }
+  const names = sources
+    .map((src) => src?.replace(/^\/media\//, ""))
+    .filter((name): name is string => Boolean(name && MEDIA_NAME.test(name)));
+  if (names.length) must(await bucket().remove(names));
 }
 
 export async function readMedia(name: string) {
   if (!MEDIA_NAME.test(name)) return null;
-  try {
-    return await fs.readFile(path.join(UPLOADS_DIR, name));
-  } catch {
-    return null;
-  }
+  const { data, error } = await bucket().download(name);
+  return error || !data ? null : Buffer.from(await data.arrayBuffer());
 }

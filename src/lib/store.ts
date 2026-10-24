@@ -1,14 +1,13 @@
 import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
-import { promises as fs } from "node:fs";
-import path from "node:path";
 
+import { db, must } from "./supabase";
 import type { Application, Family, Listing, ListingKind, Opportunity, Talent } from "./types";
 
 /**
- * مخزن بسيط بملف JSON يكفي للنسخة الأولى على خادم واحد.
- * عند التوسع يُستبدل بقاعدة بيانات دون تغيير بقية التطبيق،
+ * المخزن مستند JSON واحد في جدول forsa_store على Supabase، يكفي للنسخة الأولى.
+ * عند التوسع يُستبدل بجداول منفصلة دون تغيير بقية التطبيق،
  * لأن الوصول للبيانات كله يمر عبر هذا الملف وملف data.ts.
  */
 
@@ -50,12 +49,10 @@ type StoreShape = {
   applications: Application[];
 };
 
-export const DATA_DIR = process.env.FORSA_DATA_DIR ?? path.join(process.cwd(), ".data");
-export const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
-const STORE_FILE = path.join(DATA_DIR, "forsa.json");
-
-/** حد أعلى للبلاغات المفتوحة على الإعلان الواحد، حتى لا يكبر الملف بلا حدود */
+/** حد أعلى للبلاغات المفتوحة على الإعلان الواحد، حتى لا يكبر المستند بلا حدود */
 const MAX_OPEN_REPORTS_PER_LISTING = 20;
+/** عدد المحاولات إن كتب طلب آخر في المخزن بين قراءتنا وكتابتنا */
+const MAX_WRITE_ATTEMPTS = 8;
 
 const empty = (): StoreShape => ({
   talents: [],
@@ -69,35 +66,29 @@ const empty = (): StoreShape => ({
   applications: [],
 });
 
+async function load() {
+  const row = must(await db().from("forsa_store").select("data, version").eq("id", 1).single());
+  if (!row) throw new Error("[forsa] forsa_store row is missing; run supabase/migrations");
+  return { store: { ...empty(), ...(row.data as Partial<StoreShape>) }, version: row.version as number };
+}
+
 export async function readStore(): Promise<StoreShape> {
-  try {
-    const raw = await fs.readFile(STORE_FILE, "utf8");
-    return { ...empty(), ...(JSON.parse(raw) as Partial<StoreShape>) };
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return empty();
-    throw error;
-  }
+  return (await load()).store;
 }
 
 /**
- * طابور الكتابة مشترك على مستوى العملية كلها (وليس لكل نسخة من هذا الملف)،
- * وكل كتابة تستخدم ملفاً مؤقتاً باسم فريد ثم تستبدل الملف الأصلي دفعة واحدة.
+ * يقرأ المخزن ويعدّله ويكتبه بشرط ألا يكون تغيّر منذ قراءته (تحكم تفاؤلي بالتزامن).
+ * إن سبقنا طلب آخر نعيد القراءة والتعديل من جديد، لذا يجب ألا يكون لـ fn أثر خارج المخزن.
  */
-const shared = globalThis as typeof globalThis & { __forsaWriteQueue?: Promise<unknown> };
-
-export function mutateStore<T>(fn: (store: StoreShape) => T | Promise<T>): Promise<T> {
-  const previous = shared.__forsaWriteQueue ?? Promise.resolve();
-  const run = previous.then(async () => {
-    const store = await readStore();
+export async function mutateStore<T>(fn: (store: StoreShape) => T | Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    const { store, version } = await load();
     const result = await fn(store);
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    const tmp = `${STORE_FILE}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
-    await fs.writeFile(tmp, JSON.stringify(store, null, 2), "utf8");
-    await fs.rename(tmp, STORE_FILE);
-    return result;
-  });
-  shared.__forsaWriteQueue = run.catch(() => undefined);
-  return run;
+    const saved = must(await db().rpc("forsa_save", { p_data: store, p_version: version }));
+    if (saved !== null) return result;
+    if (attempt >= MAX_WRITE_ATTEMPTS) throw new Error("[forsa] store is busy, write abandoned");
+    await new Promise((r) => setTimeout(r, 20 * attempt + Math.random() * 50));
+  }
 }
 
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
