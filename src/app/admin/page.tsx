@@ -7,7 +7,7 @@ import { Check, Eye, EyeOff, Flag, LogOut, Trash2 } from "lucide-react";
 import { Nuqta } from "@/components/brand";
 import { SubmitButton } from "@/components/submit-button";
 import { Badge, Container } from "@/components/ui";
-import { adminEnabled, isAdmin } from "@/lib/admin";
+import { adminEnabled, adminKeyEnabled, adminVia } from "@/lib/admin";
 import { formatNumber, timeAgo } from "@/lib/format";
 import { pathOf, titleOf } from "@/lib/listing";
 import { listingKey, readStore } from "@/lib/store";
@@ -68,7 +68,10 @@ export default async function AdminPage() {
   await connection();
   if (!adminEnabled()) notFound();
 
-  if (!(await isAdmin())) {
+  const via = await adminVia();
+  if (!via) {
+    // دون مفتاح، لا يدخل إلا أصحاب أرقام الفريق، فلا نكشف الصفحة لغيرهم
+    if (!adminKeyEnabled()) notFound();
     return (
       <Container className="flex justify-center py-20">
         <div className="w-full max-w-sm rounded-[28px] rounded-ee-[8px] bg-white p-8 shadow-lift ring-1 ring-ink-100">
@@ -76,6 +79,15 @@ export default async function AdminPage() {
           <h1 className="mt-4 text-2xl font-black text-ink-900">لوحة الإشراف</h1>
           <p className="mt-1 mb-6 text-sm text-ink-600">لفريق مبادرة «فرصة» فقط.</p>
           <LoginForm />
+          <p className="mt-5 text-center text-sm text-ink-600">
+            من فريق «فرصة»؟{" "}
+            <Link
+              href="/login?next=/admin"
+              className="font-semibold text-clay-700 underline underline-offset-4"
+            >
+              ادخل برقم واتسابك
+            </Link>
+          </p>
         </div>
       </Container>
     );
@@ -105,12 +117,14 @@ export default async function AdminPage() {
           </p>
           <h1 className="mt-2 text-4xl font-black text-ink-900">لوحة الإشراف</h1>
         </div>
-        <form action={adminLogout}>
-          <SubmitButton size="sm" variant="ghost">
-            <LogOut className="size-4" />
-            خروج
-          </SubmitButton>
-        </form>
+        {via === "key" ? (
+          <form action={adminLogout}>
+            <SubmitButton size="sm" variant="ghost">
+              <LogOut className="size-4" />
+              خروج
+            </SubmitButton>
+          </form>
+        ) : null}
       </div>
 
       <dl className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
