@@ -154,7 +154,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
               <h2 className="font-display text-xl font-extrabold text-ink-900">تقديماتك على الفرص</h2>
               <ul className="flex flex-col gap-3">
                 {applications.map(({ application, opportunity, profile }) => {
-                  const visible = !opportunity.hidden && !opportunity.moderated;
+                  const visible = !opportunity.hidden && !opportunity.moderated && !opportunity.pending;
                   return (
                     <li
                       key={application.id}

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import {
   ArrowUpLeft,
   CircleCheck,
+  Clock3,
   Eye,
   EyeOff,
   LayoutList,
@@ -85,14 +86,16 @@ export default async function ManagePage({ params, searchParams }: PageProps<"/a
           <BackLink href="/account">كل إعلاناتك</BackLink>
           <p className="mt-8 flex w-fit items-center gap-2 text-sm font-semibold text-sage-800">
             <Nuqta className="size-2.5 text-sage-600" />
-            {isNew ? "تم النشر بنجاح" : "لوحة إدارة إعلانك"}
+            {isNew ? (listing.pending ? "وصلنا إعلانك" : "تم النشر بنجاح") : "لوحة إدارة إعلانك"}
           </p>
           <h1 className="mt-3 max-w-3xl text-4xl leading-[1.25] font-black text-ink-900 md:text-5xl">
             {isNew ? "مبروك! صار لك مكان على «فرصة»" : titleOf(listing)}
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-[1.9] text-ink-700">
             {isNew
-              ? "إعلانك منشور الآن ويستطيع أهل جازان اكتشافه. شاركه مع معارفك، وتجده دائماً في «حسابي»."
+              ? listing.pending
+                ? "يراجعه فريق «فرصة» قبل نشره، ونتأكد أنه فرصة فعلية تخدم أهل جازان. يظهر للجميع بعد الموافقة، وتجده دائماً في «حسابي»."
+                : "إعلانك منشور الآن ويستطيع أهل جازان اكتشافه. شاركه مع معارفك، وتجده دائماً في «حسابي»."
               : "من هنا تتحكم في ظهور إعلانك وحالته، أو تحذفه نهائياً."}
           </p>
         </Container>
@@ -102,12 +105,19 @@ export default async function ManagePage({ params, searchParams }: PageProps<"/a
         <div className="bg-clay-700 text-white">
           <Container className="flex items-center gap-3 py-3.5 font-semibold">
             <ShieldAlert className="size-5 shrink-0" />
-            أخفى فريق الإشراف هذا الإعلان بعد مراجعة بلاغ عنه، ولن يظهر للزوار.
+            أخفى فريق الإشراف هذا الإعلان بعد مراجعته، ولن يظهر للزوار.
+          </Container>
+        </div>
+      ) : listing.pending ? (
+        <div className="bg-sand-200 text-ink-900">
+          <Container className="flex items-center gap-3 py-3.5 font-semibold">
+            <Clock3 className="size-5 shrink-0" />
+            إعلانك بانتظار موافقة فريق «فرصة»، ولن يظهر للزوار حتى تتم الموافقة عليه.
           </Container>
         </div>
       ) : null}
 
-      {saved ? (
+      {saved && !listing.pending ? (
         <div className="bg-sage-700 text-white">
           <Container className="flex items-center gap-3 py-3.5 font-semibold">
             <CircleCheck className="size-5" />

@@ -8,6 +8,7 @@ import {
   ArrowUp,
   ChartColumn,
   Check,
+  Clock3,
   EyeOff,
   Flag,
   HeartHandshake,
@@ -22,10 +23,12 @@ import { SubmitButton } from "@/components/submit-button";
 import { Badge, Container } from "@/components/ui";
 import { adminEnabled, adminKeyEnabled, adminVia } from "@/lib/admin";
 import { formatNumber, timeAgo } from "@/lib/format";
-import { pathOf, REASON_NAME, titleOf } from "@/lib/listing";
+import { areasName, pathOf, REASON_NAME, titleOf } from "@/lib/listing";
 import { partnersOf } from "@/lib/partners";
 import { reportsOf, type ReportTile } from "@/lib/reports";
+import { reviewEnabled } from "@/lib/review";
 import { listingKey, readStore } from "@/lib/store";
+import { opportunityTypeName, posterTypeName } from "@/lib/taxonomy";
 
 import { adminLogout, partnerOp } from "./actions";
 import { ListingsSection } from "./listings-section";
@@ -126,6 +129,9 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
     [...store.talents, ...store.families, ...store.opportunities].map((l) => [listingKey(l.kind, l.id), l]),
   );
   const openReports = store.reports.filter((r) => !r.resolved).reverse();
+  const pending = store.opportunities
+    .filter((o) => o.pending && !o.moderated)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const partners = partnersOf(store);
 
   const reports = reportsOf(store);
@@ -161,6 +167,56 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           تواصل الواتساب يُحسب من تاريخ تفعيل التقارير، مرة واحدة يومياً لكل زائر وإعلان، ويشمل تواصل أصحاب
           الفرص مع المتقدمين. «هذا الشهر» حسب التقويم الميلادي.
         </p>
+      </section>
+
+      <section id="pending" className="mt-12 scroll-mt-24">
+        <h2 className="flex items-center gap-2 text-2xl font-extrabold text-ink-900">
+          <Clock3 className="size-5 text-clay-600" />
+          فرص بانتظار الموافقة
+          {pending.length > 0 ? <Badge tone="clay">{formatNumber(pending.length)}</Badge> : null}
+        </h2>
+        <p className="mt-1 text-sm text-ink-600">
+          {reviewEnabled()
+            ? "علّقتها المراجعة الآلية لأنها قد لا تكون فرصة فعلية، ولا تظهر للزوار حتى توافقوا عليها."
+            : "المراجعة الآلية متوقفة: اضبطوا ANTHROPIC_API_KEY لتُراجَع الفرص قبل نشرها."}
+        </p>
+        {pending.length === 0 ? (
+          <p className="mt-4 rounded-2xl bg-sage-50 p-5 text-sage-900 ring-1 ring-sage-100">
+            لا توجد فرص بانتظار الموافقة.
+          </p>
+        ) : (
+          <ul className="mt-5 flex flex-col gap-3">
+            {pending.map((o) => (
+              <li key={o.id} className="rounded-[22px] rounded-ee-[7px] bg-white p-5 ring-1 ring-ink-100">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-ink-500">
+                  <Badge tone="ink">{opportunityTypeName(o.type)}</Badge>
+                  {posterTypeName(o.poster.type)}: {o.poster.name} · {areasName(o)} · {timeAgo(o.createdAt)}
+                </div>
+                <p className="mt-2 font-semibold text-ink-900">{o.title}</p>
+                <p className="mt-1 line-clamp-4 text-sm leading-relaxed whitespace-pre-line text-ink-700">
+                  {o.description}
+                </p>
+                <p className="mt-3 rounded-xl bg-clay-50 px-3 py-2 text-sm text-clay-800">
+                  سبب التعليق: {o.pending?.reason}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <ModerateButton op="approve" kind="opportunity" id={o.id}>
+                    <Check className="size-4" />
+                    موافقة ونشر
+                  </ModerateButton>
+                  <ModerateButton op="reject" kind="opportunity" id={o.id}>
+                    <EyeOff className="size-4" />
+                    رفض
+                  </ModerateButton>
+                  <ModerateButton op="delete" kind="opportunity" id={o.id} danger>
+                    <Trash2 className="size-4" />
+                    حذف
+                  </ModerateButton>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="mt-12">

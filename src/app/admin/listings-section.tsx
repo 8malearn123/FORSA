@@ -17,6 +17,7 @@ type Store = Awaited<ReturnType<typeof readStore>>;
 
 const STATUSES = {
   visible: "ظاهر",
+  pending: "بانتظار الموافقة",
   reported: "عليه بلاغات",
   moderated: "أخفاه الإشراف",
   hidden: "أخفاه صاحبه",
@@ -64,7 +65,8 @@ export function ListingsSection({
   const reveals = (l: Listing) => store.reveals[listingKey(l.kind, l.id)] ?? 0;
   const statusOf = (l: Listing): Status[] => {
     const s: Status[] = [];
-    if (!l.moderated && !l.hidden) s.push("visible");
+    if (!l.moderated && !l.hidden && !l.pending) s.push("visible");
+    if (l.pending) s.push("pending");
     if (reported.has(listingKey(l.kind, l.id))) s.push("reported");
     if (l.moderated) s.push("moderated");
     if (l.hidden) s.push("hidden");
@@ -213,6 +215,7 @@ export function ListingsSection({
                       {KIND_NAME[l.kind]}
                     </Badge>
                     {areasName(l)} · {timeAgo(l.createdAt)} · طلبات تواصل: {formatNumber(reveals(l))}
+                    {l.pending ? <Badge tone="sand">بانتظار الموافقة</Badge> : null}
                     {s.includes("reported") ? <Badge tone="clay">عليه بلاغات</Badge> : null}
                     {l.moderated ? <Badge tone="clay">أخفاه الإشراف</Badge> : null}
                     {l.hidden ? <Badge tone="sand">أخفاه صاحبه</Badge> : null}
@@ -220,7 +223,7 @@ export function ListingsSection({
                     {s.includes("stale") ? <Badge tone="sand">قد تكون انتهت</Badge> : null}
                   </div>
                   <Link
-                    href={pathOf(l)}
+                    href={l.pending ? "#pending" : pathOf(l)}
                     className="mt-1.5 block truncate font-semibold text-ink-900 hover:text-clay-700"
                   >
                     {titleOf(l)}

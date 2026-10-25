@@ -29,7 +29,7 @@ export async function adminLogout() {
   redirect("/");
 }
 
-/** إجراءات الإشراف: إخفاء، إظهار، حذف إعلان، أو إغلاق بلاغ */
+/** إجراءات الإشراف: إخفاء، إظهار، موافقة على فرصة معلّقة أو رفضها، حذف إعلان، أو إغلاق بلاغ */
 export async function moderate(formData: FormData) {
   if (!(await isAdmin())) return;
   const op = String(formData.get("op") ?? "");
@@ -48,6 +48,12 @@ export async function moderate(formData: FormData) {
     // إخفاء الإشراف علامة مستقلة عن إخفاء صاحب الإعلان، ولا يستطيع صاحبه إلغاءها
     if (listing && op === "hide") listing.moderated = true;
     if (listing && op === "show") listing.moderated = false;
+    // فرصة علّقتها المراجعة الآلية: الموافقة تنشرها، والرفض يخفيها كأي إعلان أخفاه الإشراف
+    if (listing && op === "approve") delete listing.pending;
+    if (listing && op === "reject") {
+      delete listing.pending;
+      listing.moderated = true;
+    }
     return null;
   });
   if (removed) await discardImages(imagesOf(removed));

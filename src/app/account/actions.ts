@@ -155,7 +155,8 @@ export async function applyToOpportunity(_prev: ApplyState, formData: FormData):
     return { error: "قدّمت على فرص كثيرة اليوم. حاول مرة أخرى غداً." };
   const result = await mutateStore((store) => {
     const opportunity = store.opportunities.find((o) => o.id === opportunityId);
-    if (!opportunity?.apply || opportunity.hidden || opportunity.moderated) return "missing";
+    if (!opportunity?.apply || opportunity.hidden || opportunity.moderated || opportunity.pending)
+      return "missing";
     if (opportunity.closed) return "closed";
     if (opportunity.ownerId === account.id) return "own";
     // من قدّم من قبل لا يُكرر تقديمه
