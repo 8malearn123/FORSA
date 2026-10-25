@@ -15,6 +15,7 @@ import { cn } from "./cn";
 import { WhatsApp } from "./icons";
 import { CoverImage } from "./media";
 import { SubmitButton } from "./submit-button";
+import { ContactLink } from "./tracked-link";
 import { Badge, buttonClass, type ButtonVariant } from "./ui";
 
 /** التواصل مع المتقدم: واتساب برسالة جاهزة تذكّره بالفرصة، وإلا اتصال أو بريد */
@@ -202,8 +203,9 @@ export function ApplicantCard({
             </Link>
           )}
           {contact ? (
-            <a
+            <ContactLink
               href={contact.href}
+              whatsappOf={contact.Icon === WhatsApp ? { kind: profile.kind, id: profile.id } : undefined}
               target={contact.href.startsWith("https:") ? "_blank" : undefined}
               rel="noopener noreferrer"
               className={buttonClass({
@@ -216,7 +218,7 @@ export function ApplicantCard({
               <span dir="ltr" className="text-xs font-medium opacity-80">
                 {contact.display}
               </span>
-            </a>
+            </ContactLink>
           ) : (
             <span className="text-xs text-ink-500">لا توجد وسيلة تواصل في الملف</span>
           )}
