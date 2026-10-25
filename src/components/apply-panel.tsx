@@ -62,23 +62,7 @@ export async function ApplyPanel({
   const store = account ? await readStore() : null;
 
   let body: ReactNode;
-  if (o.seed) {
-    body = (
-      <Note tone="clay">
-        <p className="font-semibold">هذه فرصة تجريبية للعرض</p>
-        <p className="mt-1 text-clay-800">
-          التقديم عليها معطّل. في الفرص الحقيقية تختار ملفك وتقدّم بضغطة، وصاحب الفرصة يفرز المتقدمين ويتواصل
-          مع المناسب.
-        </p>
-        <Link
-          href="/join"
-          className="mt-3 inline-block font-semibold text-clay-700 underline underline-offset-4"
-        >
-          أضف ملفك الحقيقي الآن
-        </Link>
-      </Note>
-    );
-  } else if (o.closed) {
+  if (o.closed) {
     body = <Note>اكتملت هذه الفرصة ولم تعد تستقبل التقديم. تصفّح فرصاً مشابهة بالأسفل.</Note>;
   } else if (!account || !store) {
     body = (

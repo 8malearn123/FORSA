@@ -258,7 +258,7 @@ const talentSchema = z.object({
 
 type TalentFields = Omit<
   Talent,
-  "kind" | "id" | "createdAt" | "ownerId" | "available" | "seed" | "hidden" | "moderated"
+  "kind" | "id" | "createdAt" | "ownerId" | "available" | "hidden" | "moderated"
 >;
 
 async function readTalent(fd: FormData, existing?: Talent): Promise<Parsed<TalentFields>> {
@@ -336,7 +336,7 @@ const familySchema = z.object({
     .max(8, { error: `حتى ${formatNumber(8)} منتجات` }),
 });
 
-type FamilyFields = Omit<Family, "kind" | "id" | "createdAt" | "ownerId" | "seed" | "hidden" | "moderated">;
+type FamilyFields = Omit<Family, "kind" | "id" | "createdAt" | "ownerId" | "hidden" | "moderated">;
 
 async function readFamily(fd: FormData, existing?: Family): Promise<Parsed<FamilyFields>> {
   const names = fd.getAll("product_name").map((n) => clean(n).trim());
@@ -428,7 +428,7 @@ const opportunitySchema = z.object({
 
 type OpportunityFields = Omit<
   Opportunity,
-  "kind" | "id" | "createdAt" | "ownerId" | "seed" | "hidden" | "moderated" | "closed" | "renewedAt"
+  "kind" | "id" | "createdAt" | "ownerId" | "hidden" | "moderated" | "closed" | "renewedAt"
 >;
 
 /** نحذف علامات القوائم فقط («-»، «•»، «١.»، «2)») ونُبقي الأرقام التي هي جزء من النص («3 سنوات خبرة») */

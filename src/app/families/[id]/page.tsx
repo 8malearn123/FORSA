@@ -24,7 +24,6 @@ export async function generateMetadata({ params }: PageProps<"/families/[id]">):
     title: `${family.name} — ${family.tagline}`,
     description: family.story.slice(0, 160),
     openGraph: coverOf(family) ? { images: [coverOf(family)!] } : undefined,
-    robots: family.seed ? { index: false } : undefined,
   };
 }
 

@@ -38,11 +38,9 @@ The interface is Arabic-only and RTL. Forsa is only a place to discover: it has 
 - **Older listings** were managed through a secret link. Opening that link while logged in links the listing to the account once, and the link then stops working. Those pages send no `Referer` header, so the link can't leak to other sites.
 - **Security headers** are set in `next.config.ts`: `nosniff`, `X-Frame-Options: DENY`, a strict referrer policy and a restrictive permissions policy.
 
-### Demo content
+### Real content only
 
-The seed listings in `src/lib/seed/*` are illustrative examples inspired by Jazan: 14 talents, 10 families, and 16 opportunities. They're flagged `seed: true`, and their contact buttons show a "demo profile" notice instead of contacting anyone. They're kept out of the sitemap and marked `noindex`.
-
-**At launch, set `FORSA_DEMO=off`** when you build and when you run the app. The seed content disappears, and every section switches to a "be the first to post" invitation. The home hero then shows an illustration of the three sides connecting in place of example cards.
+Forsa ships with no sample or demo listings. Everything on the site comes from the `forsa_store` table in Supabase, so every talent, family, and opportunity shown is one a real account posted through «انضم». When a section has nothing yet, it shows a "be the first to post" invitation, and the home hero shows an illustration of the three sides connecting.
 
 ## Design system
 
@@ -66,7 +64,7 @@ Everything comes from the logo (`public/brand/forsa-logo.svg`), which is used ex
 src/
   app/            routes (home, opportunities, talents, families, search, join, manage, admin, about, credits, media)
   components/     design system (brand, ui, cards, forms, icons) + page sections
-  lib/            taxonomy, seed data, search, store, uploads, formatting
+  lib/            taxonomy, search, store, uploads, formatting
 ```
 
 ## Running locally
@@ -88,7 +86,6 @@ Apply `supabase/migrations/*.sql` to a new project once (SQL editor or `supabase
 Optional environment variables:
 
 - `NEXT_PUBLIC_SITE_URL`: the public URL, used for metadata, sitemap, and share links.
-- `FORSA_DEMO=off`: hides the demo content, for launch.
 - `FORSA_ADMIN_PHONES`: the WhatsApp numbers of the initiative team, comma-separated (`0501234567` or `966501234567`). Logging in normally with one of them opens the moderation page at `/admin`, linked from «حسابي».
 - `FORSA_ADMIN_KEY`: a secret of 12 characters or more that also opens `/admin`, for when WhatsApp login isn't available. If neither this nor `FORSA_ADMIN_PHONES` is set, that page returns 404, and without the key it returns 404 to everyone but the team's numbers.
 - `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`: set this to a stable value if you run more than one instance.

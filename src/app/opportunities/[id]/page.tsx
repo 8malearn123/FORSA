@@ -22,8 +22,6 @@ export async function generateMetadata({ params }: PageProps<"/opportunities/[id
   return {
     title: o.title,
     description: `${opportunityTypeName(o.type)} في ${governorateName(o.governorate)}: ${o.description.slice(0, 140)}`,
-    // المحتوى التجريبي لا يُفهرس في محركات البحث
-    robots: o.seed ? { index: false } : undefined,
   };
 }
 
@@ -60,7 +58,7 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
 
   // بيانات منظمة للوظائف والتدريب حتى تظهر في نتائج البحث عن الوظائف
   const jobJsonLd =
-    (o.type === "job" || o.type === "training") && !o.closed && !stale && !o.seed
+    (o.type === "job" || o.type === "training") && !o.closed && !stale
       ? {
           "@context": "https://schema.org",
           "@type": "JobPosting",

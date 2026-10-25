@@ -11,12 +11,6 @@ import {
 import { getStats, listFamilies, listOpportunities, listTalents } from "@/lib/data";
 import { isStale } from "@/lib/listing";
 
-/** يختار عناصر بعينها إن وُجدت، وإلا يكمل من الأحدث */
-function pick<T extends { id: string }>(items: T[], ids: string[]) {
-  const chosen = ids.map((id) => items.find((i) => i.id === id)).filter((i): i is T => Boolean(i));
-  return [...chosen, ...items.filter((i) => !chosen.includes(i))];
-}
-
 export default async function HomePage() {
   const [talents, families, opportunities, stats] = await Promise.all([
     listTalents(),
@@ -31,7 +25,7 @@ export default async function HomePage() {
     <>
       <Hero
         opportunity={open.find((o) => o.type === "order") ?? open[0]}
-        family={families.find((f) => f.id === "alrayhan-hospitality") ?? families[0]}
+        family={families.find((f) => f.products.some((p) => p.image)) ?? families[0]}
         talent={talents.find((t) => t.available) ?? talents[0]}
       />
       <Paths
@@ -45,10 +39,7 @@ export default async function HomePage() {
       <FamiliesShowcase items={families.slice(0, 3)} total={stats.families} />
       <CorporateBand />
       <TalentsShowcase items={talents.slice(0, 6)} total={stats.talents} />
-      <Stories
-        families={pick(families, ["khoos-wa-teen", "farasan-bukhoor"])}
-        talents={pick(talents, ["mohammed-alfaifi"])}
-      />
+      <Stories families={families} talents={talents} />
       <Areas counts={stats.byArea} />
       <HowItWorks />
       <FinalCta />
