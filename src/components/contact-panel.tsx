@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Globe, LoaderCircle, Mail, MessageCircleHeart, Phone, ShieldCheck } from "lucide-react";
 
@@ -158,22 +157,6 @@ export function ContactPanel({
               );
             })}
           </ul>
-        ) : null}
-
-        {result?.status === "demo" ? (
-          <div className="mt-5 rounded-2xl bg-clay-50 p-4 text-sm leading-relaxed text-clay-900 ring-1 ring-clay-100">
-            <p className="font-semibold">هذا ملف تجريبي للعرض</p>
-            <p className="mt-1 text-clay-800">
-              المحتوى الحالي أمثلة توضح شكل «فرصة» في نسختها الأولى، لذلك التواصل معطّل هنا. في الملفات
-              الحقيقية يظهر لك واتساب والاتصال مباشرة.
-            </p>
-            <Link
-              href="/join"
-              className="mt-3 inline-block font-semibold text-clay-700 underline underline-offset-4"
-            >
-              أضف ملفك الحقيقي الآن
-            </Link>
-          </div>
         ) : null}
 
         {result?.status === "closed" ? (

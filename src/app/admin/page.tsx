@@ -157,7 +157,7 @@ export default async function AdminPage() {
                           {titleOf(listing)}
                         </Link>
                       ) : (
-                        `${KIND_NAME[r.kind]} تجريبية أو محذوفة (${r.listingId})`
+                        `${KIND_NAME[r.kind]} محذوفة (${r.listingId})`
                       )}
                     </p>
                     {r.note ? <p className="mt-1 text-sm text-ink-600">«{r.note}»</p> : null}

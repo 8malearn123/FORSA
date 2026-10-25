@@ -3,12 +3,8 @@ import "server-only";
 import { connection } from "next/server";
 import { cache } from "react";
 
-import { demoEnabled } from "./demo";
 import { freshSince, isStale } from "./listing";
 import { rank } from "./search";
-import { seedFamilies } from "./seed/families";
-import { seedOpportunities } from "./seed/opportunities";
-import { seedTalents } from "./seed/talents";
 import { readStore } from "./store";
 import { GOVERNORATES, type GovernorateSlug } from "./taxonomy";
 import type { Family, Listing, Opportunity, Talent } from "./types";
@@ -16,18 +12,14 @@ import type { Family, Listing, Opportunity, Talent } from "./types";
 const newestFirst = (a: Listing, b: Listing) => b.createdAt.localeCompare(a.createdAt);
 const visible = <T extends Listing>(l: T) => !l.hidden && !l.moderated;
 
-const demo = <T>(items: T[]) => (demoEnabled() ? items : []);
-
 /** كل البيانات مرة واحدة لكل طلب */
 const loadAll = cache(async () => {
   await connection();
   const store = await readStore();
   return {
-    talents: [...store.talents, ...demo(seedTalents)].filter(visible).sort(newestFirst) as Talent[],
-    families: [...store.families, ...demo(seedFamilies)].filter(visible).sort(newestFirst) as Family[],
-    opportunities: [...store.opportunities, ...demo(seedOpportunities)]
-      .filter(visible)
-      .sort(newestFirst) as Opportunity[],
+    talents: store.talents.filter(visible).sort(newestFirst) as Talent[],
+    families: store.families.filter(visible).sort(newestFirst) as Family[],
+    opportunities: store.opportunities.filter(visible).sort(newestFirst) as Opportunity[],
   };
 });
 

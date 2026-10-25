@@ -14,7 +14,6 @@ import { Logo, Nuqta, Sparks } from "@/components/brand";
 import { HowItWorks } from "@/components/home/community";
 import { AgreementScene } from "@/components/illustrations";
 import { ButtonLink, Container, SectionHeading } from "@/components/ui";
-import { demoEnabled } from "@/lib/demo";
 
 export const metadata: Metadata = {
   title: "عن فرصة",
@@ -93,11 +92,6 @@ const FAQ = [
   {
     q: "لماذا لا تطلبون صوراً شخصية؟",
     a: "نحترم خصوصية مجتمعنا. يكفي اسمك أو كنيتك، وصور أعمالك ومنتجاتك تتكلم عنك. وبيانات تواصلك لا تظهر إلا لمن يطلبها.",
-  },
-  {
-    demo: true,
-    q: "هل الملفات المعروضة الآن حقيقية؟",
-    a: "هذه النسخة التجريبية الأولى تعرض أمثلة توضيحية من وحي جازان حتى تتضح الفكرة، والتواصل معها معطّل. كل ما يُنشر من خلال «انضم» يظهر كإعلان حقيقي.",
   },
 ];
 
@@ -216,7 +210,7 @@ export default function AboutPage() {
           <div className="max-w-3xl">
             <SectionHeading eyebrow="الأسئلة الشائعة" title="أسئلة تجينا كثير" />
             <div className="mt-10 flex flex-col gap-3">
-              {FAQ.filter((item) => demoEnabled() || !item.demo).map((item) => (
+              {FAQ.map((item) => (
                 <details
                   key={item.q}
                   className="group rounded-[24px] rounded-ee-[7px] bg-white px-6 py-5 ring-1 ring-ink-100 open:ring-clay-200"

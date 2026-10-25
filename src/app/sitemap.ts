@@ -18,15 +18,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
   return [
     ...pages,
-    // الإعلانات الحقيقية فقط، دون المحتوى التجريبي
-    ...talents
-      .filter((t) => !t.seed)
-      .map((t) => ({ url: `${SITE}/talents/${t.id}`, lastModified: t.createdAt })),
-    ...families
-      .filter((f) => !f.seed)
-      .map((f) => ({ url: `${SITE}/families/${f.id}`, lastModified: f.createdAt })),
+    ...talents.map((t) => ({ url: `${SITE}/talents/${t.id}`, lastModified: t.createdAt })),
+    ...families.map((f) => ({ url: `${SITE}/families/${f.id}`, lastModified: f.createdAt })),
     ...opportunities
-      .filter((o) => !o.closed && !o.seed)
+      .filter((o) => !o.closed)
       .map((o) => ({ url: `${SITE}/opportunities/${o.id}`, lastModified: freshSince(o) })),
   ];
 }

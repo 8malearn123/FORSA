@@ -19,7 +19,6 @@ async function findListing(kind: unknown, id: unknown): Promise<Listing | null> 
 
 export type RevealResult =
   | { status: "ok"; channels: ContactChannel[] }
-  | { status: "demo" }
   | { status: "closed" }
   | { status: "limited" }
   | { status: "missing" };
@@ -31,7 +30,6 @@ export type RevealResult =
 export async function revealContact(kind: ListingKind, id: string): Promise<RevealResult> {
   const listing = await findListing(kind, id);
   if (!listing) return { status: "missing" };
-  if (listing.seed) return { status: "demo" };
   if (listing.kind === "opportunity" && listing.closed) return { status: "closed" };
   const visitor = await visitorKey();
   const key = listingKey(listing.kind, listing.id);

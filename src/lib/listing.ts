@@ -4,7 +4,7 @@ export const KINDS: ListingKind[] = ["talent", "family", "opportunity"];
 
 export const isKind = (value: unknown): value is ListingKind => KINDS.includes(value as ListingKind);
 
-/** معرّف إعلان صالح للروابط: حروف لاتينية صغيرة وأرقام (وشرطات في الأمثلة التجريبية) */
+/** معرّف إعلان صالح للروابط: حروف لاتينية صغيرة وأرقام وشرطات */
 export const isListingId = (value: unknown): value is string =>
   typeof value === "string" && /^[a-z0-9-]{1,60}$/.test(value);
 

@@ -28,7 +28,6 @@ export async function generateMetadata({ params }: PageProps<"/talents/[id]">): 
   return {
     title: `${talent.name} — ${talent.headline}`,
     description: talent.bio.slice(0, 160),
-    robots: talent.seed ? { index: false } : undefined,
   };
 }
 
