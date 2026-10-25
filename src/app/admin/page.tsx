@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Check, Eye, EyeOff, Flag, LogOut, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  Eye,
+  EyeOff,
+  Flag,
+  HeartHandshake,
+  LogOut,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 import { Nuqta } from "@/components/brand";
 import { SubmitButton } from "@/components/submit-button";
@@ -10,12 +23,14 @@ import { Badge, Container } from "@/components/ui";
 import { adminEnabled, adminKeyEnabled, adminVia } from "@/lib/admin";
 import { formatNumber, timeAgo } from "@/lib/format";
 import { pathOf, REASON_NAME, titleOf } from "@/lib/listing";
+import { partnersOf } from "@/lib/partners";
 import { listingKey, readStore } from "@/lib/store";
 import { governorateName } from "@/lib/taxonomy";
 import type { Listing, ListingKind } from "@/lib/types";
 
-import { adminLogout, moderate } from "./actions";
+import { adminLogout, moderate, partnerOp } from "./actions";
 import { LoginForm } from "./login-form";
+import { PartnerForm } from "./partner-form";
 
 export const metadata: Metadata = {
   title: "الإشراف",
@@ -50,6 +65,33 @@ function ModerateButton({
       {id ? <input type="hidden" name="id" value={id} /> : null}
       {report ? <input type="hidden" name="report" value={report} /> : null}
       <SubmitButton size="sm" variant={danger ? "soft" : "secondary"}>
+        {children}
+      </SubmitButton>
+    </form>
+  );
+}
+
+function PartnerButton({
+  op,
+  id,
+  label,
+  children,
+}: {
+  op: string;
+  id: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <form action={partnerOp}>
+      <input type="hidden" name="op" value={op} />
+      <input type="hidden" name="id" value={id} />
+      <SubmitButton
+        size="sm"
+        variant={op === "delete" ? "soft" : "secondary"}
+        aria-label={label}
+        title={label}
+      >
         {children}
       </SubmitButton>
     </form>
@@ -91,6 +133,7 @@ export default async function AdminPage() {
   );
   const byKey = new Map(listings.map((l) => [listingKey(l.kind, l.id), l]));
   const openReports = store.reports.filter((r) => !r.resolved).reverse();
+  const partners = partnersOf(store);
 
   const stats = [
     { label: "مواهب", value: store.talents.length },
@@ -185,6 +228,86 @@ export default async function AdminPage() {
             })}
           </ul>
         )}
+      </section>
+
+      <section className="mt-12">
+        <h2 className="flex items-center gap-2 text-2xl font-extrabold text-ink-900">
+          <HeartHandshake className="size-5 text-clay-600" />
+          شركاء النجاح
+        </h2>
+        <p className="mt-1 text-sm text-ink-600">
+          تظهر بهذا الترتيب في صفحة{" "}
+          <Link href="/about#partners" className="font-semibold text-clay-700 underline underline-offset-4">
+            «عن فرصة»
+          </Link>
+          ، وإن حذفتها كلها يختفي القسم.
+        </p>
+        <ul className="mt-5 flex flex-col gap-2">
+          {partners.map((p, i) => (
+            <li key={p.id} className="rounded-2xl rounded-ee-[6px] bg-white p-4 ring-1 ring-ink-100">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="relative grid h-12 w-24 shrink-0 place-items-center rounded-xl bg-sand-50">
+                  {p.logo ? (
+                    <Image
+                      src={p.logo}
+                      alt=""
+                      fill
+                      sizes="96px"
+                      unoptimized={p.logo.startsWith("/media/")}
+                      className="object-contain p-1.5"
+                    />
+                  ) : (
+                    <span className="text-xs text-ink-500">بلا شعار</span>
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-ink-900">{p.name}</p>
+                  {p.role || p.url ? (
+                    <p className="truncate text-sm text-ink-500">
+                      {[p.role, p.url?.replace(/^https?:\/\//, "")].filter(Boolean).join(" · ")}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex gap-2">
+                  {i > 0 ? (
+                    <PartnerButton op="up" id={p.id} label="تقديم">
+                      <ArrowUp className="size-4" />
+                    </PartnerButton>
+                  ) : null}
+                  {i < partners.length - 1 ? (
+                    <PartnerButton op="down" id={p.id} label="تأخير">
+                      <ArrowDown className="size-4" />
+                    </PartnerButton>
+                  ) : null}
+                  <PartnerButton op="delete" id={p.id} label="حذف">
+                    <Trash2 className="size-4" />
+                  </PartnerButton>
+                </div>
+              </div>
+              <details className="group mt-3">
+                <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-clay-700">
+                  <Pencil className="size-3.5" />
+                  تعديل
+                </summary>
+                <div className="mt-4 border-t border-ink-100 pt-4">
+                  <PartnerForm partner={p} />
+                </div>
+              </details>
+            </li>
+          ))}
+        </ul>
+        <details
+          className="mt-3 rounded-2xl rounded-ee-[6px] bg-white p-4 ring-1 ring-ink-100"
+          open={partners.length === 0}
+        >
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-semibold text-ink-900">
+            <Plus className="size-4 text-clay-600" />
+            إضافة شريك أو راعٍ
+          </summary>
+          <div className="mt-4">
+            <PartnerForm />
+          </div>
+        </details>
       </section>
 
       <section className="mt-12">

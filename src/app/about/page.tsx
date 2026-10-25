@@ -14,6 +14,7 @@ import { Logo, Nuqta, Sparks } from "@/components/brand";
 import { HowItWorks } from "@/components/home/community";
 import { AgreementScene } from "@/components/illustrations";
 import { ButtonLink, Container, SectionHeading } from "@/components/ui";
+import { listPartners } from "@/lib/partners";
 
 export const metadata: Metadata = {
   title: "عن فرصة",
@@ -54,12 +55,6 @@ const SAFETY = [
   },
 ];
 
-/** شعار «فرصة» مؤقت حتى تصل الشعارات الرسمية؛ ضع كل شعار في public/partners/ وغيّر المسار هنا */
-const PARTNERS = [
-  { name: "قمة كود", logo: "/brand/forsa-logo.svg" },
-  { name: "المصممة أثير", logo: "/brand/forsa-logo.svg" },
-];
-
 const FAQ = [
   {
     q: "هل «فرصة» مجانية؟",
@@ -95,7 +90,9 @@ const FAQ = [
   },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  // يديرها فريق الإشراف من لوحة الإشراف
+  const partners = await listPartners();
   return (
     <>
       <section className="relative overflow-hidden">
@@ -186,24 +183,55 @@ export default function AboutPage() {
         </Container>
       </section>
 
-      <section id="partners" className="scroll-mt-24 pt-20 md:pt-24">
-        <Container>
-          <SectionHeading eyebrow="شركاء النجاح" title="شكراً لمن ساهم في بناء «فرصة»" />
-          <ul className="mt-10 grid max-w-xl grid-cols-2 gap-4">
-            {PARTNERS.map((p) => (
-              <li
-                key={p.name}
-                className="flex flex-col items-center gap-5 rounded-[28px] rounded-ee-[8px] bg-white px-5 py-8 text-center shadow-soft ring-1 ring-ink-100"
-              >
-                <span className="relative h-16 w-full max-w-36">
-                  <Image src={p.logo} alt="" fill sizes="144px" className="object-contain" />
-                </span>
-                <p className="font-display text-lg font-bold text-ink-900">{p.name}</p>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
+      {partners.length > 0 ? (
+        <section id="partners" className="scroll-mt-24 pt-20 md:pt-24">
+          <Container>
+            <SectionHeading eyebrow="شركاء النجاح" title="شكراً لمن ساهم في بناء «فرصة»" />
+            <ul className="mt-10 grid max-w-3xl grid-cols-2 gap-4 md:grid-cols-3">
+              {partners.map((p) => {
+                const card = (
+                  <>
+                    {p.logo ? (
+                      <span className="relative h-16 w-full max-w-36">
+                        <Image
+                          src={p.logo}
+                          alt=""
+                          fill
+                          sizes="144px"
+                          unoptimized={p.logo.startsWith("/media/")}
+                          className="object-contain"
+                        />
+                      </span>
+                    ) : null}
+                    <span>
+                      <span className="block font-display text-lg font-bold text-ink-900">{p.name}</span>
+                      {p.role ? <span className="mt-1 block text-sm text-ink-500">{p.role}</span> : null}
+                    </span>
+                  </>
+                );
+                const className =
+                  "flex h-full flex-col items-center justify-center gap-5 rounded-[28px] rounded-ee-[8px] bg-white px-5 py-8 text-center shadow-soft ring-1 ring-ink-100";
+                return (
+                  <li key={p.id}>
+                    {p.url ? (
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${className} transition hover:ring-clay-200`}
+                      >
+                        {card}
+                      </a>
+                    ) : (
+                      <div className={className}>{card}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </Container>
+        </section>
+      ) : null}
 
       <section id="faq" className="scroll-mt-24 py-20">
         <Container>
