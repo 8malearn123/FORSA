@@ -28,6 +28,10 @@ type BaseListing = {
   hidden?: boolean;
   /** أخفاه فريق الإشراف — لا يستطيع صاحب الإعلان إلغاءه */
   moderated?: boolean;
+  /**
+   * علّقته المراجعة الآلية حتى يوافق عليه فريق الإشراف، ولا يظهر للزوار حتى ذلك (للفرص حالياً)
+   */
+  pending?: { reason: string; at: string };
 };
 
 export type Talent = BaseListing & {

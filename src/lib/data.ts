@@ -10,7 +10,7 @@ import { GOVERNORATES, type GovernorateSlug } from "./taxonomy";
 import type { Family, Listing, Opportunity, Talent } from "./types";
 
 const newestFirst = (a: Listing, b: Listing) => b.createdAt.localeCompare(a.createdAt);
-const visible = <T extends Listing>(l: T) => !l.hidden && !l.moderated;
+const visible = <T extends Listing>(l: T) => !l.hidden && !l.moderated && !l.pending;
 
 /** كل البيانات مرة واحدة لكل طلب */
 const loadAll = cache(async () => {

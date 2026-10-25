@@ -88,6 +88,7 @@ Optional environment variables:
 - `NEXT_PUBLIC_SITE_URL`: the public URL, used for metadata, sitemap, and share links.
 - `FORSA_ADMIN_PHONES`: the WhatsApp numbers of the initiative team, comma-separated (`0501234567` or `966501234567`). Logging in normally with one of them opens the moderation page at `/admin`, linked from «حسابي».
 - `FORSA_ADMIN_KEY`: a secret of 12 characters or more that also opens `/admin`, for when WhatsApp login isn't available. If neither this nor `FORSA_ADMIN_PHONES` is set, that page returns 404, and without the key it returns 404 to everyone but the team's numbers.
+- `ANTHROPIC_API_KEY`: turns on AI review of opportunities (`src/lib/review.ts`). Each new or edited opportunity is checked by Claude before it goes live: a genuine request is published at once, while one that looks like self-promotion, an ad, a scam, or is too vague is held as pending. Pending opportunities stay hidden until the team approves or rejects them under «فرص بانتظار الموافقة» in `/admin`, and the team gets a WhatsApp notice for each. If the review fails, the opportunity is held for manual review. Without the key, opportunities publish directly as before.
 - `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`: set this to a stable value if you run more than one instance.
 - **WhatsApp login codes.** These are sent through Meta's WhatsApp Cloud API:
   - `WHATSAPP_TOKEN`: a system user access token.

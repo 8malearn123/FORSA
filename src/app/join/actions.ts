@@ -8,6 +8,7 @@ import { currentAccount } from "@/lib/auth";
 import { COUNT, countLabel, formatNumber } from "@/lib/format";
 import { imagesOf, KIND_NAME, pathOf, titleOf } from "@/lib/listing";
 import { notifyAdmins, siteLink } from "@/lib/notifications";
+import { reviewOpportunity } from "@/lib/review";
 import { HOUR, release, take, visitorKey } from "@/lib/rate-limit";
 import { collectionOf, insertListing, mutateStore, newId, ownedListing, readStore } from "@/lib/store";
 import {
@@ -429,7 +430,7 @@ const opportunitySchema = z.object({
 
 type OpportunityFields = Omit<
   Opportunity,
-  "kind" | "id" | "createdAt" | "ownerId" | "hidden" | "moderated" | "closed" | "renewedAt"
+  "kind" | "id" | "createdAt" | "ownerId" | "hidden" | "moderated" | "pending" | "closed" | "renewedAt"
 >;
 
 /** نحذف علامات القوائم فقط («-»، «•»، «١.»، «2)») ونُبقي الأرقام التي هي جزء من النص («3 سنوات خبرة») */
@@ -482,6 +483,24 @@ async function readOpportunity(fd: FormData): Promise<Parsed<OpportunityFields>>
 
 /* ─────────────── النشر ─────────────── */
 
+/** تنبيه فريق الإشراف بإعلان جديد، أو بفرصة علّقتها المراجعة الآلية وتنتظر موافقتهم */
+const newListingMessage = (listing: Listing) =>
+  (listing.pending
+    ? [
+        "⏳ فرصة بانتظار موافقتكم",
+        titleOf(listing),
+        `السبب: ${listing.pending.reason}`,
+        siteLink("/admin#pending"),
+      ]
+    : ["🆕 إعلان جديد في فرصة", `${KIND_NAME[listing.kind]}: ${titleOf(listing)}`, siteLink(pathOf(listing))]
+  ).join("\n");
+
+/** يعلّق الفرصة إن شكّت فيها المراجعة الآلية */
+async function screenOpportunity(listing: Listing) {
+  if (listing.kind !== "opportunity") return;
+  listing.pending = (await reviewOpportunity(listing)).pending;
+}
+
 type Stamp = { id: string; createdAt: string; ownerId: string };
 
 /**
@@ -492,6 +511,8 @@ async function publish<T>(
   fd: FormData,
   read: (fd: FormData) => Promise<Parsed<T>>,
   toListing: (data: T, stamp: Stamp) => Listing,
+  /** فحص قبل الحفظ، يعدّل الإعلان (مثلاً بتعليقه للمراجعة) */
+  screen?: (listing: Listing) => Promise<void>,
 ): Promise<FormState> {
   if (isBot(fd)) return fail({}, "تعذّر إرسال النموذج.");
   let reserved: string | undefined;
@@ -514,21 +535,15 @@ async function publish<T>(
       createdAt: new Date().toISOString(),
       ownerId: account.id,
     });
+    await screen?.(listing);
     path = `/account/${listing.kind}/${await insertListing(listing)}?new=1`;
-    after(() =>
-      notifyAdmins(
-        [
-          "🆕 إعلان جديد في فرصة",
-          `${KIND_NAME[listing.kind]}: ${titleOf(listing)}`,
-          siteLink(pathOf(listing)),
-        ].join("\n"),
-      ),
-    );
+    after(() => notifyAdmins(newListingMessage(listing)));
     // من أنشأ ملفه ليقدّم على فرصة يرجع إليها مباشرة ليكمل التقديم
     const target = get(fd, "apply");
     if (target && listing.kind !== "opportunity") {
       const o = (await readStore()).opportunities.find((x) => x.id === target);
-      if (o?.apply && !o.closed && !o.hidden && !o.moderated) path = `/opportunities/${o.id}?ready=1#apply`;
+      if (o?.apply && !o.closed && !o.hidden && !o.moderated && !o.pending)
+        path = `/opportunities/${o.id}?ready=1#apply`;
     }
   } catch (error) {
     console.error("[forsa] publish failed", error);
@@ -548,7 +563,12 @@ export async function createFamily(_prev: FormState, fd: FormData): Promise<Form
 }
 
 export async function createOpportunity(_prev: FormState, fd: FormData): Promise<FormState> {
-  return publish(fd, readOpportunity, (data, stamp) => ({ ...stamp, ...data, kind: "opportunity" }));
+  return publish(
+    fd,
+    readOpportunity,
+    (data, stamp) => ({ ...stamp, ...data, kind: "opportunity" }),
+    screenOpportunity,
+  );
 }
 
 /* ─────────────── التعديل من الحساب ─────────────── */
@@ -642,5 +662,13 @@ export async function updateFamily(id: string, _prev: FormState, fd: FormData): 
 }
 
 export async function updateOpportunity(id: string, _prev: FormState, fd: FormData): Promise<FormState> {
-  return edit<Opportunity>(id, "opportunity", fd, (form) => readOpportunity(form));
+  // التعديل يُراجع من جديد، حتى لا تُنشر فرصة مقبولة ثم تُبدَّل بغيرها
+  return edit<Opportunity>(id, "opportunity", fd, async (form, existing) => {
+    const result = await readOpportunity(form);
+    if (!result.ok) return result;
+    const { pending } = await reviewOpportunity({ ...existing, ...result.data });
+    if (pending && !existing.pending)
+      after(() => notifyAdmins(newListingMessage({ ...existing, ...result.data, pending })));
+    return { ...result, data: { ...result.data, pending } };
+  });
 }

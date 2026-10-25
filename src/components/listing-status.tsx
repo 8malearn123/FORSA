@@ -9,6 +9,8 @@ export function ListingStatus({ listing }: { listing: Listing }) {
     <>
       {listing.moderated ? (
         <Badge tone="clay">أخفاه فريق الإشراف</Badge>
+      ) : listing.pending ? (
+        <Badge tone="sand">بانتظار موافقة فريق فرصة</Badge>
       ) : listing.hidden ? (
         <Badge tone="sand">مخفي حالياً</Badge>
       ) : (
