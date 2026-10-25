@@ -3,7 +3,7 @@ import "server-only";
 import { connection } from "next/server";
 import { cache } from "react";
 
-import { freshSince, isStale } from "./listing";
+import { areasOf, freshSince, inArea, isStale } from "./listing";
 import { rank } from "./search";
 import { readStore } from "./store";
 import { GOVERNORATES, type GovernorateSlug } from "./taxonomy";
@@ -53,7 +53,7 @@ export async function listOpportunities(f: OpportunityFilters = {}) {
   const { opportunities } = await loadAll();
   const filtered = opportunities.filter(
     (o) =>
-      (!f.area || o.governorate === f.area) &&
+      (!f.area || inArea(o, f.area)) &&
       (!f.category || o.category === f.category) &&
       (!f.type || o.type === f.type),
   );
@@ -110,7 +110,7 @@ export async function getStats() {
   const { talents, families, opportunities } = await loadAll();
   const open = opportunities.filter((o) => !o.closed);
   const byArea = Object.fromEntries(GOVERNORATES.map((g) => [g.slug, 0])) as Record<GovernorateSlug, number>;
-  for (const l of [...talents, ...families, ...open]) byArea[l.governorate] += 1;
+  for (const l of [...talents, ...families, ...open]) for (const a of areasOf(l)) byArea[a] += 1;
   return {
     talents: talents.length,
     families: families.length,
@@ -131,7 +131,7 @@ export function similarTo<T extends Listing>(
     .filter((p) => p.id !== item.id && !(p.kind === "opportunity" && p.closed))
     .map((p) => ({
       p,
-      s: (sameCategory(item, p) ? 2 : 0) + (p.governorate === item.governorate ? 1 : 0),
+      s: (sameCategory(item, p) ? 2 : 0) + (areasOf(p).some((a) => inArea(item, a)) ? 1 : 0),
     }))
     .filter((x) => x.s > 0)
     .sort((a, b) => b.s - a.s)

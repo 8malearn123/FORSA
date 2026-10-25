@@ -141,4 +141,13 @@ export const COUNT = {
     many: "حرفاً",
     unit: "حرف",
   },
+  otherArea: {
+    zero: "",
+    one: "محافظة أخرى",
+    two: "محافظتان أخريان",
+    twoAcc: "محافظتين أخريين",
+    few: "محافظات أخرى",
+    many: "محافظة أخرى",
+    unit: "محافظة أخرى",
+  },
 } as const satisfies Record<string, CountForms>;

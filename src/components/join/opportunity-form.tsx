@@ -48,6 +48,7 @@ export function OpportunityForm({
   const [type, setType] = useState<OpportunityType | undefined>(initial?.type ?? defaultType);
   const [poster, setPoster] = useState<string>(initial?.poster.type ?? "individual");
   // الشركات والجهات تفرز المتقدمين افتراضياً، والأفراد يستقبلون التواصل مباشرة. ويستطيع كلٌّ تغييره
+  const [multiArea, setMultiArea] = useState(Boolean(initial?.areas));
   const [receive, setReceive] = useState(initial ? (initial.apply ? "apply" : "contact") : "contact");
   return (
     <ActionForm
@@ -109,6 +110,23 @@ export function OpportunityForm({
             options={GOVERNORATES.map((g) => ({ value: g.slug, label: g.name }))}
           />
         </div>
+        <Toggle
+          name="multiArea"
+          label="متاحة في أكثر من محافظة"
+          hint="مثلاً وظيفة لها فروع في عدة محافظات، أو مهمة تغطي المنطقة كلها."
+          defaultChecked={multiArea}
+          onChange={setMultiArea}
+        />
+        {multiArea ? (
+          <Choices
+            label="المحافظات الأخرى"
+            name="areas"
+            multiple
+            defaultValue={initial?.areas}
+            hint="المحافظة المختارة أعلاه مشمولة تلقائياً."
+            options={GOVERNORATES.map((g) => ({ value: g.slug, label: g.name }))}
+          />
+        ) : null}
         <Toggle name="remote" label="يمكن إنجازها عن بُعد" defaultChecked={initial?.remote} />
       </FormSection>
 

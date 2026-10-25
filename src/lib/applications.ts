@@ -1,3 +1,4 @@
+import { inArea } from "./listing";
 import { rank } from "./search";
 import {
   experienceName,
@@ -38,7 +39,7 @@ export function fitOf(profile: Talent | Family, opportunity: Opportunity) {
     if (tone === "good") score += weight;
   };
   const area = governorateName(profile.governorate);
-  const sameArea = profile.governorate === opportunity.governorate;
+  const sameArea = inArea(opportunity, profile.governorate);
 
   if (profile.kind === "talent") {
     const female = profile.gender === "f";

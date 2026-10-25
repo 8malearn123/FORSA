@@ -1,4 +1,5 @@
 import { GOVERNORATES, getCategory, governorateName, type GovernorateSlug } from "./taxonomy";
+import { areasOf } from "./listing";
 import { normalizeArabic } from "./text";
 import type { Listing } from "./types";
 
@@ -152,7 +153,7 @@ export function parseQuery(query: string): ParsedQuery {
 type Field = { text: string; weight: number };
 
 function fieldsOf(listing: Listing): Field[] {
-  const area = { text: governorateName(listing.governorate), weight: 2 };
+  const area = { text: areasOf(listing).map(governorateName).join(" "), weight: 2 };
   if (listing.kind === "talent") {
     return [
       { text: listing.name, weight: 5 },
@@ -234,7 +235,7 @@ function match(listing: Listing, query: ParsedQuery) {
       score += best;
     }
   }
-  const inArea = query.areas.includes(listing.governorate);
+  const inArea = query.areas.some((a) => areasOf(listing).includes(a));
   return { words, matched: words + (inArea ? 1 : 0), score: score + (inArea ? 2 : 0) };
 }
 
