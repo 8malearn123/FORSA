@@ -7,7 +7,7 @@ import { after } from "next/server";
 import { isKind, KIND_NAME, pathOf, REASON_NAME, titleOf } from "@/lib/listing";
 import { notifyAdmins, siteLink } from "@/lib/notifications";
 import { DAY, HOUR, release, take, visitorKey } from "@/lib/rate-limit";
-import { addReport, countReveal, listingKey } from "@/lib/store";
+import { addReport, countEvent, countReveal, listingKey } from "@/lib/store";
 import type { Listing, ListingKind } from "@/lib/types";
 
 async function findListing(kind: unknown, id: unknown): Promise<Listing | null> {
@@ -41,6 +41,18 @@ export async function revealContact(kind: ListingKind, id: string): Promise<Reve
   }
   if (firstToday) await countReveal(listing.kind, listing.id);
   return { status: "ok", channels: contactChannels(listing.contact, titleOf(listing)) };
+}
+
+/**
+ * يحسب ضغطات «تواصل عبر واتساب» لتقارير لوحة الإشراف، مرة واحدة يومياً لكل زائر وإعلان.
+ * لا يرجع شيئاً، والزائر لا ينتظره.
+ */
+export async function countWhatsApp(kind: ListingKind, id: string) {
+  const listing = await findListing(kind, id);
+  if (!listing) return;
+  const visitor = await visitorKey();
+  if (!(await take(`wa-once:${visitor}:${listingKey(listing.kind, listing.id)}`, 1, DAY))) return;
+  await countEvent(`whatsapp:${listing.kind}`);
 }
 
 const REASONS = ["wrong-info", "inappropriate", "scam", "expired", "other"] as const;

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Globe, LoaderCircle, Mail, MessageCircleHeart, Phone, ShieldCheck } from "lucide-react";
 
-import { revealContact, type RevealResult } from "@/app/actions";
+import { countWhatsApp, revealContact, type RevealResult } from "@/app/actions";
 import type { ContactChannel } from "@/lib/contact";
 import type { ListingKind } from "@/lib/types";
 
@@ -138,6 +138,9 @@ export function ContactPanel({
                     href={c.href}
                     target={c.kind === "phone" || c.kind === "email" ? undefined : "_blank"}
                     rel="noopener noreferrer"
+                    onClick={
+                      c.kind === "whatsapp" ? () => void countWhatsApp(kind, id).catch(() => {}) : undefined
+                    }
                     className={cn(
                       buttonClass({ variant: i === 0 ? "sage" : "secondary", size: "lg" }),
                       "w-full justify-between",

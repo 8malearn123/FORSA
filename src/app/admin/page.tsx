@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import {
   ArrowDown,
   ArrowUp,
+  ChartColumn,
   Check,
   Eye,
   EyeOff,
@@ -24,6 +25,7 @@ import { adminEnabled, adminKeyEnabled, adminVia } from "@/lib/admin";
 import { formatNumber, timeAgo } from "@/lib/format";
 import { pathOf, REASON_NAME, titleOf } from "@/lib/listing";
 import { partnersOf } from "@/lib/partners";
+import { reportsOf, type ReportTile } from "@/lib/reports";
 import { listingKey, readStore } from "@/lib/store";
 import { governorateName } from "@/lib/taxonomy";
 import type { Listing, ListingKind } from "@/lib/types";
@@ -68,6 +70,33 @@ function ModerateButton({
         {children}
       </SubmitButton>
     </form>
+  );
+}
+
+function ReportGroup({ title, tiles }: { title: string; tiles: ReportTile[] }) {
+  return (
+    <div className="mt-5">
+      <h3 className="mb-2 text-sm font-semibold text-ink-600">{title}</h3>
+      <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {tiles.map((t) => (
+          <div
+            key={t.label}
+            className="flex flex-col rounded-[22px] rounded-ee-[7px] bg-white p-5 ring-1 ring-ink-100"
+          >
+            <dt className="text-sm text-ink-500">{t.label}</dt>
+            <dd className="mt-1 flex flex-wrap items-baseline gap-x-2 font-display text-3xl font-black text-ink-900">
+              {formatNumber(t.value)}
+              {t.month ? (
+                <span className="font-sans text-xs font-semibold text-sage-700">
+                  +{formatNumber(t.month)} هذا الشهر
+                </span>
+              ) : null}
+            </dd>
+            {t.note ? <dd className="mt-auto pt-2 text-xs leading-relaxed text-ink-500">{t.note}</dd> : null}
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
@@ -135,12 +164,7 @@ export default async function AdminPage() {
   const openReports = store.reports.filter((r) => !r.resolved).reverse();
   const partners = partnersOf(store);
 
-  const stats = [
-    { label: "مواهب", value: store.talents.length },
-    { label: "أسر منتجة", value: store.families.length },
-    { label: "فرص", value: store.opportunities.length },
-    { label: "بلاغات مفتوحة", value: openReports.length },
-  ];
+  const reports = reportsOf(store);
 
   return (
     <Container className="py-12">
@@ -162,19 +186,24 @@ export default async function AdminPage() {
         ) : null}
       </div>
 
-      <dl className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-[22px] rounded-ee-[7px] bg-white p-5 ring-1 ring-ink-100">
-            <dt className="text-sm text-ink-500">{s.label}</dt>
-            <dd className="mt-1 font-display text-3xl font-black text-ink-900">{formatNumber(s.value)}</dd>
-          </div>
-        ))}
-      </dl>
+      <section className="mt-8">
+        <h2 className="flex items-center gap-2 text-2xl font-extrabold text-ink-900">
+          <ChartColumn className="size-5 text-clay-600" />
+          التقارير
+        </h2>
+        <ReportGroup title="الأعضاء" tiles={reports.people} />
+        <ReportGroup title="النشاط" tiles={reports.activity} />
+        <p className="mt-3 text-xs leading-relaxed text-ink-500">
+          تواصل الواتساب يُحسب من تاريخ تفعيل التقارير، مرة واحدة يومياً لكل زائر وإعلان، ويشمل تواصل أصحاب
+          الفرص مع المتقدمين. «هذا الشهر» حسب التقويم الميلادي.
+        </p>
+      </section>
 
       <section className="mt-12">
         <h2 className="flex items-center gap-2 text-2xl font-extrabold text-ink-900">
           <Flag className="size-5 text-clay-600" />
           البلاغات المفتوحة
+          {openReports.length > 0 ? <Badge tone="clay">{formatNumber(openReports.length)}</Badge> : null}
         </h2>
         {openReports.length === 0 ? (
           <p className="mt-4 rounded-2xl bg-sage-50 p-5 text-sage-900 ring-1 ring-sage-100">

@@ -59,6 +59,11 @@ type StoreShape = {
   applications: Application[];
   /** بدونها تظهر القائمة الافتراضية، والقائمة الفارغة تُخفي القسم */
   partners?: Partner[];
+  /**
+   * عدّادات لتقارير لوحة الإشراف لا تنقص بحذف الإعلانات: «whatsapp:family» للإجمالي،
+   * و«whatsapp:family@2026-10» لكل شهر
+   */
+  counters?: Record<string, number>;
 };
 
 /** حد أعلى للبلاغات المفتوحة على الإعلان الواحد، حتى لا يكبر المستند بلا حدود */
@@ -179,6 +184,17 @@ export async function countReveal(kind: ListingKind, id: string) {
   await mutateStore((store) => {
     const key = listingKey(kind, id);
     store.reveals[key] = (store.reveals[key] ?? 0) + 1;
+  });
+}
+
+/** الشهر بصيغة 2026-10 لعدّادات التقارير */
+export const monthOf = (date: Date | string = new Date()) => new Date(date).toISOString().slice(0, 7);
+
+/** يزيد عدّاد حدث في الإجمالي وفي الشهر الحالي */
+export async function countEvent(name: string) {
+  await mutateStore((store) => {
+    const counters = (store.counters ??= {});
+    for (const key of [name, `${name}@${monthOf()}`]) counters[key] = (counters[key] ?? 0) + 1;
   });
 }
 
