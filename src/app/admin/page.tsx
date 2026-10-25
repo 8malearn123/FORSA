@@ -8,7 +8,6 @@ import {
   ArrowUp,
   ChartColumn,
   Check,
-  Eye,
   EyeOff,
   Flag,
   HeartHandshake,
@@ -27,51 +26,17 @@ import { pathOf, REASON_NAME, titleOf } from "@/lib/listing";
 import { partnersOf } from "@/lib/partners";
 import { reportsOf, type ReportTile } from "@/lib/reports";
 import { listingKey, readStore } from "@/lib/store";
-import { governorateName } from "@/lib/taxonomy";
-import type { Listing, ListingKind } from "@/lib/types";
 
-import { adminLogout, moderate, partnerOp } from "./actions";
+import { adminLogout, partnerOp } from "./actions";
+import { ListingsSection } from "./listings-section";
 import { LoginForm } from "./login-form";
+import { KIND_NAME, ModerateButton } from "./moderate-button";
 import { PartnerForm } from "./partner-form";
 
 export const metadata: Metadata = {
   title: "الإشراف",
   robots: { index: false, follow: false },
 };
-
-const KIND_NAME: Record<ListingKind, string> = {
-  talent: "موهبة",
-  family: "أسرة منتجة",
-  opportunity: "فرصة",
-};
-
-function ModerateButton({
-  op,
-  kind,
-  id,
-  report,
-  children,
-  danger,
-}: {
-  op?: string;
-  kind?: ListingKind;
-  id?: string;
-  report?: string;
-  children: React.ReactNode;
-  danger?: boolean;
-}) {
-  return (
-    <form action={moderate}>
-      {op ? <input type="hidden" name="op" value={op} /> : null}
-      {kind ? <input type="hidden" name="kind" value={kind} /> : null}
-      {id ? <input type="hidden" name="id" value={id} /> : null}
-      {report ? <input type="hidden" name="report" value={report} /> : null}
-      <SubmitButton size="sm" variant={danger ? "soft" : "secondary"}>
-        {children}
-      </SubmitButton>
-    </form>
-  );
-}
 
 function ReportGroup({ title, tiles }: { title: string; tiles: ReportTile[] }) {
   return (
@@ -127,7 +92,7 @@ function PartnerButton({
   );
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   await connection();
   if (!adminEnabled()) notFound();
 
@@ -157,10 +122,9 @@ export default async function AdminPage() {
   }
 
   const store = await readStore();
-  const listings: Listing[] = [...store.talents, ...store.families, ...store.opportunities].sort((a, b) =>
-    b.createdAt.localeCompare(a.createdAt),
+  const byKey = new Map(
+    [...store.talents, ...store.families, ...store.opportunities].map((l) => [listingKey(l.kind, l.id), l]),
   );
-  const byKey = new Map(listings.map((l) => [listingKey(l.kind, l.id), l]));
   const openReports = store.reports.filter((r) => !r.resolved).reverse();
   const partners = partnersOf(store);
 
@@ -339,56 +303,7 @@ export default async function AdminPage() {
         </details>
       </section>
 
-      <section className="mt-12">
-        <h2 className="text-2xl font-extrabold text-ink-900">أحدث الإعلانات المنشورة</h2>
-        {listings.length === 0 ? (
-          <p className="mt-4 text-ink-600">لم يُنشر أي إعلان بعد.</p>
-        ) : (
-          <ul className="mt-5 flex flex-col gap-2">
-            {listings.slice(0, 60).map((l) => (
-              <li
-                key={listingKey(l.kind, l.id)}
-                className="flex flex-col gap-3 rounded-2xl rounded-ee-[6px] bg-white p-4 ring-1 ring-ink-100 md:flex-row md:items-center"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-ink-500">
-                    <Badge tone={l.kind === "family" ? "clay" : l.kind === "talent" ? "sage" : "ink"}>
-                      {KIND_NAME[l.kind]}
-                    </Badge>
-                    {governorateName(l.governorate)} · {timeAgo(l.createdAt)} · طلبات تواصل:{" "}
-                    {formatNumber(store.reveals[listingKey(l.kind, l.id)] ?? 0)}
-                    {l.moderated ? <Badge tone="clay">أخفاه الإشراف</Badge> : null}
-                    {l.hidden ? <Badge tone="sand">أخفاه صاحبه</Badge> : null}
-                  </div>
-                  <Link
-                    href={pathOf(l)}
-                    className="mt-1.5 block truncate font-semibold text-ink-900 hover:text-clay-700"
-                  >
-                    {titleOf(l)}
-                  </Link>
-                </div>
-                <div className="flex gap-2">
-                  {l.moderated ? (
-                    <ModerateButton op="show" kind={l.kind} id={l.id}>
-                      <Eye className="size-4" />
-                      إظهار
-                    </ModerateButton>
-                  ) : (
-                    <ModerateButton op="hide" kind={l.kind} id={l.id}>
-                      <EyeOff className="size-4" />
-                      إخفاء
-                    </ModerateButton>
-                  )}
-                  <ModerateButton op="delete" kind={l.kind} id={l.id} danger>
-                    <Trash2 className="size-4" />
-                    حذف
-                  </ModerateButton>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <ListingsSection store={store} params={await searchParams} />
     </Container>
   );
 }
