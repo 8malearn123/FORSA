@@ -19,15 +19,23 @@ const isFile = (v: FormDataEntryValue | null): v is File =>
 /**
  * يعيد ترميز الصورة على الخادم: تدوير صحيح، تصغير، وحذف كل البيانات الوصفية
  * (ومنها موقع التصوير الجغرافي — مهم لأسر تصوّر من بيوتها).
+ * ملفات SVG تُحوَّل لصورة عادية بدقة عالية، فلا يُقدَّم أي SVG مرفوع كما هو.
  */
-export async function saveImage(entry: FormDataEntryValue | null): Promise<string | undefined> {
+export async function saveImage(
+  entry: FormDataEntryValue | null,
+  { side = 1600 } = {},
+): Promise<string | undefined> {
   if (!isFile(entry)) return undefined;
   if (entry.size > MAX_UPLOAD_BYTES) throw new UploadError("حجم الصورة كبير، الحد الأقصى ٦ ميجابايت.");
   let output: Buffer;
   try {
-    output = await sharp(Buffer.from(await entry.arrayBuffer()), { limitInputPixels: 50_000_000 })
+    const svg = entry.type === "image/svg+xml";
+    output = await sharp(Buffer.from(await entry.arrayBuffer()), {
+      limitInputPixels: 50_000_000,
+      ...(svg ? { density: 300 } : {}),
+    })
       .rotate()
-      .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
+      .resize({ width: side, height: side, fit: "inside", withoutEnlargement: true })
       .webp({ quality: 80 })
       .toBuffer();
   } catch {

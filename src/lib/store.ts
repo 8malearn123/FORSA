@@ -29,6 +29,16 @@ export type Account = {
   lastLoginAt?: string;
 };
 
+/** جهة تظهر في «شركاء النجاح» بصفحة «عن فرصة»، ويديرها فريق الإشراف */
+export type Partner = {
+  id: string;
+  name: string;
+  /** صفة قصيرة تحت الاسم: «الراعي الرسمي»، «التصميم» */
+  role?: string;
+  logo?: string;
+  url?: string;
+};
+
 type Session = { accountId: string; createdAt: string; expiresAt: string };
 
 type StoreShape = {
@@ -47,6 +57,8 @@ type StoreShape = {
   /** كم زائراً طلب وسائل التواصل لكل إعلان — يظهر لصاحبه فقط */
   reveals: Record<string, number>;
   applications: Application[];
+  /** بدونها تظهر القائمة الافتراضية، والقائمة الفارغة تُخفي القسم */
+  partners?: Partner[];
 };
 
 /** حد أعلى للبلاغات المفتوحة على الإعلان الواحد، حتى لا يكبر المستند بلا حدود */

@@ -13,7 +13,7 @@ import { Badge, ButtonLink, Container } from "@/components/ui";
 import { contactChannels } from "@/lib/contact";
 import { getOpportunity, listOpportunities, similarTo } from "@/lib/data";
 import { formatNumber, timeAgo } from "@/lib/format";
-import { STALE_DAYS, freshSince, isStale } from "@/lib/listing";
+import { STALE_DAYS, areasName, areasOf, freshSince, isStale } from "@/lib/listing";
 import { getCategory, governorateName, opportunityTypeName, posterTypeName } from "@/lib/taxonomy";
 
 export async function generateMetadata({ params }: PageProps<"/opportunities/[id]">): Promise<Metadata> {
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps<"/opportunities/[id
   if (!o) return { title: "الفرصة غير موجودة" };
   return {
     title: o.title,
-    description: `${opportunityTypeName(o.type)} في ${governorateName(o.governorate)}: ${o.description.slice(0, 140)}`,
+    description: `${opportunityTypeName(o.type)} في ${areasName(o)}: ${o.description.slice(0, 140)}`,
   };
 }
 
@@ -44,7 +44,7 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
     {
       icon: MapPin,
       label: "المكان",
-      value: `${governorateName(o.governorate)}${o.remote ? " · أو عن بُعد" : ""}`,
+      value: `${areasName(o, { full: true })}${o.remote ? " · أو عن بُعد" : ""}`,
     },
     o.when && { icon: CalendarDays, label: "الموعد", value: o.when },
     o.quantity && { icon: Package, label: "العدد أو الكمية", value: o.quantity },
@@ -67,15 +67,15 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
           datePosted: freshSince(o),
           employmentType: o.type === "training" ? "INTERN" : undefined,
           hiringOrganization: { "@type": "Organization", name: o.poster.name },
-          jobLocation: {
+          jobLocation: areasOf(o).map((area) => ({
             "@type": "Place",
             address: {
               "@type": "PostalAddress",
-              addressLocality: governorateName(o.governorate),
+              addressLocality: governorateName(area),
               addressRegion: "منطقة جازان",
               addressCountry: "SA",
             },
-          },
+          })),
           jobLocationType: o.remote ? "TELECOMMUTE" : undefined,
           directApply: Boolean(o.apply),
         }

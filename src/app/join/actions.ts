@@ -415,6 +415,7 @@ const opportunitySchema = z.object({
   title: text(6, 90, "عنوان الفرصة"),
   category: z.enum(slugs(CATEGORIES), { error: "اختر المجال" }),
   governorate: z.enum(slugs(GOVERNORATES), { error: "اختر المحافظة" }),
+  areas: z.array(z.enum(slugs(GOVERNORATES), { error: "اختر المحافظات من القائمة" })),
   remote: z.boolean(),
   description: text(30, 1200, "التفاصيل", true),
   requirements: z
@@ -442,6 +443,8 @@ async function readOpportunity(fd: FormData): Promise<Parsed<OpportunityFields>>
     title: get(fd, "title"),
     category: get(fd, "category") || undefined,
     governorate: get(fd, "governorate") || undefined,
+    // المحافظات الإضافية تُرسل فقط إن فعّل «في أكثر من محافظة»
+    areas: fd.getAll("areas").filter((v) => typeof v === "string"),
     remote: fd.get("remote") === "on",
     description: get(fd, "description"),
     requirements: get(fd, "requirements")
@@ -461,11 +464,14 @@ async function readOpportunity(fd: FormData): Promise<Parsed<OpportunityFields>>
   if (bad || !parsed.success || (contact && !contact.success)) return { ok: false, state: bad ?? fail({}) };
 
   const { posterType, posterName, remote, receive, ...data } = parsed.data;
+  // المحافظة الرئيسية أولاً، ثم البقية بترتيب القائمة
+  const areas = [...new Set([data.governorate, ...data.areas])];
   return {
     ok: true,
     saved: [],
     data: {
       ...data,
+      areas: areas.length > 1 ? areas : undefined,
       poster: { type: posterType, name: posterName },
       remote: remote || undefined,
       apply: receive === "apply" || undefined,

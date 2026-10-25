@@ -79,6 +79,11 @@ export type Opportunity = BaseListing & {
   budget?: string;
   quantity?: string;
   remote?: boolean;
+  /**
+   * كل المحافظات التي تشملها الفرصة إن كانت أكثر من واحدة، وأولها governorate.
+   * بدونها الفرصة في محافظة واحدة فقط.
+   */
+  areas?: GovernorateSlug[];
   closed?: boolean;
   /** آخر مرة أكّد فيها صاحب الفرصة أنها ما زالت متاحة */
   renewedAt?: string;

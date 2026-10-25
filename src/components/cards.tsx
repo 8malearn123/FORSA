@@ -10,7 +10,7 @@ import {
   type OpportunityType,
   type PosterType,
 } from "@/lib/taxonomy";
-import { coverOf, freshSince, isStale } from "@/lib/listing";
+import { areasName, coverOf, freshSince, isStale } from "@/lib/listing";
 import type { Family, Opportunity, Talent } from "@/lib/types";
 
 import { NuqtaAvatar } from "./brand";
@@ -203,7 +203,7 @@ export function OpportunityCard({
       <div className="mt-auto flex flex-wrap gap-x-4 gap-y-1.5 pt-4 text-sm text-ink-500">
         <span className="inline-flex items-center gap-1">
           <MapPin className="size-4 text-clay-500" />
-          {governorateName(o.governorate)}
+          {areasName(o)}
           {o.remote ? " · عن بُعد" : ""}
         </span>
         {o.when ? (
